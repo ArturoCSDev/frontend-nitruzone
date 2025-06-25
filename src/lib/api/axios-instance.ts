@@ -75,15 +75,15 @@ const createAxiosInstance = (): AxiosInstance => {
 
 export const apiClient = createAxiosInstance();
 
-// Helpers tipados
+// Helpers tipados - CORREGIDOS para aceptar cualquier tipo de data
 export const api = {
   get: <T>(url: string, params?: Record<string, unknown>) => 
     apiClient.get<ApiResponse<T>>(url, { params }),
   
-  post: <T>(url: string, data?: Record<string, unknown>) => 
+  post: <T>(url: string, data?: unknown) => 
     apiClient.post<ApiResponse<T>>(url, data),
   
-  put: <T>(url: string, data?: Record<string, unknown>) => 
+  put: <T>(url: string, data?: unknown) => 
     apiClient.put<ApiResponse<T>>(url, data),
   
   delete: <T>(url: string) => 
