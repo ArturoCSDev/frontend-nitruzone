@@ -1,0 +1,15 @@
+export const AUTH = {
+  LOGIN: "/auth/login",
+  REGISTER: "/auth/register",
+  LOGOUT: "/auth/logout",
+  REFRESH_TOKEN: "/auth/refresh-token",
+  ME: "/auth/me",
+  VERIFY_EMAIL: "/auth/email/verify",
+  VERIFY_PHONE: "/auth/phone/verify",
+  RESEND_EMAIL_VERIFICATION: "/auth/email/resend-verification",
+  RESEND_PHONE_VERIFICATION: "/auth/phone/resend-code",
+  CHANGE_PASSWORD: "/auth/password/change",
+  FORGOT_PASSWORD: "/auth/password/forgot",
+  REQUEST_PASSWORD_RESET: "/auth/request-password-reset",
+  RESET_PASSWORD: "/auth/password/reset",
+};
