@@ -4,7 +4,7 @@ import { ApiResponse } from './api.types';
 import { authSessionService } from '../../services/session/auth-session.service';
 import { handleApiError, handleNetworkError } from './error-handlers';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://backend-nutrizone.vercel.app/api/v1';
 
 const createAxiosInstance = (): AxiosInstance => {
   const instance = axios.create({
