@@ -10,6 +10,7 @@ const createAxiosInstance = (): AxiosInstance => {
   const instance = axios.create({
     baseURL: BASE_URL,
     timeout: 30000,
+    withCredentials: true, // ✅ Importante para CORS con cookies/auth
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -24,8 +25,14 @@ const createAxiosInstance = (): AxiosInstance => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
+      // ✅ Asegurar headers CORS
+      if (!config.headers['X-Requested-With']) {
+        config.headers['X-Requested-With'] = 'XMLHttpRequest';
+      }
+
       if (import.meta.env.DEV) {
         console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
+        console.log('Headers:', config.headers);
       }
 
       return config;
@@ -46,6 +53,14 @@ const createAxiosInstance = (): AxiosInstance => {
       if (axios.isAxiosError(error)) {
         if (import.meta.env.DEV) {
           console.error(`❌ ${error.response?.status} ${error.config?.url}`);
+          console.error('Error details:', error.message);
+          console.error('Response data:', error.response?.data);
+        }
+
+        // ✅ Manejar errores CORS específicamente
+        if (error.code === 'ERR_NETWORK' || error.message.includes('CORS')) {
+          console.error('🚫 CORS Error detected');
+          return Promise.reject(new Error('Error de conexión: Verificar configuración CORS'));
         }
 
         // Si es 401, limpiar sesión y redirigir
