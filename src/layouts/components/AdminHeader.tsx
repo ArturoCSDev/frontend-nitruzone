@@ -41,7 +41,6 @@ export const AdminHeader = () => {
           <h1 className="text-lg font-semibold text-foreground">Panel Administrativo</h1>
         </div>
       </div>
-
       {/* Right side - User menu */}
       <div className="flex items-center gap-4">
         {/* Welcome text */}
