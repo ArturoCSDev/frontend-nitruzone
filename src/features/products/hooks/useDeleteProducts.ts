@@ -9,8 +9,7 @@ export const useDeleteProducts = () => {
   return useMutation({
     mutationFn: (id: string) => productApi.deleteProducto(id),
     onSuccess: (data) => {
-      toast.success('¡Producto eliminado exitosamente!', {
-        description: 'El producto ha sido removido del inventario',
+      toast.success(data.message, {
         duration: 5000,
       });
       
@@ -21,8 +20,7 @@ export const useDeleteProducts = () => {
     },
     onError: (error) => {
       const message = getErrorMessage(error);
-      toast.error('Error al eliminar producto', {
-        description: message,
+      toast.error(message, {
         duration: 6000,
       });
     },

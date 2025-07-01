@@ -9,8 +9,7 @@ export const useDeleteSabores = () => {
   return useMutation({
     mutationFn: (id: string) => productApi.deleteSabor(id),
     onSuccess: (data) => {
-      toast.success('¡Sabor eliminado exitosamente!', {
-        description: 'El sabor ha sido removido del catálogo',
+      toast.success(data.message, {
         duration: 5000,
       });
       
@@ -20,8 +19,7 @@ export const useDeleteSabores = () => {
     },
     onError: (error) => {
       const message = getErrorMessage(error);
-      toast.error('Error al eliminar sabor', {
-        description: message,
+      toast.error(message, {
         duration: 6000,
       });
     },
