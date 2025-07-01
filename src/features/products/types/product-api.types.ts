@@ -101,10 +101,6 @@ export interface TamanoItem {
   export interface ListSaboresResponse {
     sabores: SaborItem[];
     total: number;
-    summary: {
-      totalActive: number;
-      totalInactive: number;
-    };
   }
   
   export interface DeleteSaborResponse {
@@ -188,14 +184,6 @@ export interface TamanoItem {
   export interface ListProductosResponse {
     productos: ProductoItem[];
     total: number;
-    summary: {
-      totalActive: number;
-      totalInactive: number;
-      totalInStock: number;
-      totalOutOfStock: number;
-      totalLowStock: number;
-      averagePrice: number;
-    };
   }
   
   export interface DeleteProductoResponse {

@@ -125,26 +125,6 @@ export default function ListSabores() {
             <div className="text-2xl font-bold">{data?.total || 0}</div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Activos</CardTitle>
-            <Badge variant="default" className="h-4 w-fit text-xs">Activo</Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.summary.totalActive || 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactivos</CardTitle>
-            <Badge variant="secondary" className="h-4 w-fit text-xs">Inactivo</Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.summary.totalInactive || 0}</div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filters */}
