@@ -67,6 +67,22 @@ export const AdminLayout = () => {
                   Lista Admins
                 </Link>
               </li>
+              <li>
+                <Link 
+                  to="/panel/inventory"
+                  className="block p-2 text-gray-700 hover:bg-gray-100 rounded"
+                >
+                  Lista Productos
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/panel/inventory/sabores"
+                  className="block p-2 text-gray-700 hover:bg-gray-100 rounded"
+                >
+                  Lista Sabores
+                </Link>
+              </li>
             </ul>
           </nav>
         </aside>

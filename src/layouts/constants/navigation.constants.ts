@@ -2,7 +2,8 @@ import {
     UserPlus, 
     Shield, 
     Users, 
-    Settings 
+    Settings,
+    Package 
   } from 'lucide-react';
   import { NavigationGroup } from '../types/navigation.types';
   
@@ -38,6 +39,23 @@ import {
           url: "/panel/list-users/admin",
           icon: Settings,
           description: "Ver y gestionar administradores"
+        },
+      ]
+    },
+    {
+      title: "Inventario",
+      items: [
+        {
+          title: "Lista de Productos",
+          url: "/panel/inventory",
+          icon: Package,
+          description: "Ver y gestionar productos"
+        },
+        {
+          title: "Lista de Sabores",
+          url: "/panel/inventory/sabores",
+          icon: Package,
+          description: "Ver y gestionar sabores"
         },
       ]
     }
