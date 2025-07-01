@@ -23,6 +23,8 @@ const RegisterClient = lazy(() => import('../features/admin/pages/RegisterClient
 const RegisterAdmin = lazy(() => import('../features/admin/pages/RegisterAdmin'));
 const ListAdmins = lazy(() => import('../features/admin/pages/ListAdmins'));
 const ListClients = lazy(() => import('../features/admin/pages/ListClients'));
+const ListProducts = lazy(() => import('../features/products/pages/ListProducts'));
+const ListSabores = lazy(() => import('../features/products/pages/ListSabores'));
 
 // Cliente
 const Club = lazy(() => import('../features/client/pages/Club'));
@@ -59,6 +61,8 @@ export const router = createBrowserRouter([
       { path: 'register-admin', element: <RegisterAdmin /> },
       { path: 'list-users/admin', element: <ListAdmins /> },
       { path: 'list-users/client', element: <ListClients /> },
+      { path: 'inventory', element: <ListProducts /> },
+      { path: 'inventory/sabores', element: <ListSabores /> },
     ],
   },
 

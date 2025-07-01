@@ -5,6 +5,7 @@ import {
   Users, 
   Settings,
   Leaf,
+  Package,
 } from 'lucide-react';
 
 import {
@@ -48,6 +49,21 @@ const navigationItems = [
         title: "Lista de Admins",
         url: "/panel/list-users/admin",
         icon: Settings,
+      },
+    ]
+  },
+  {
+    title: "Inventario",
+    items: [
+      {
+        title: "Lista de Productos",
+        url: "/panel/inventory",
+        icon: Package,
+      },
+      {
+        title: "Lista de Sabores",
+        url: "/panel/inventory/sabores",
+        icon: Package,
       },
     ]
   }
