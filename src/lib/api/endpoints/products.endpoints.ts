@@ -2,7 +2,7 @@ export const INVENTORY_ENDPOINTS = {
     TAMANOS: {
         ID: '/inventory/tamanos/:id',
         GET_ALL: '/inventory/tamanos',
-        GET_BY_VOLUME: '/tamanos/volumen/:min/:max',
+        GET_BY_VOLUME: '/inventory/tamanos/volumen/:min/:max',
     },
     PRODUCTOS: {
         ID: '/inventory/productos/:id',

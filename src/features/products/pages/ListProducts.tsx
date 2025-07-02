@@ -1,18 +1,10 @@
-// src/features/products/pages/ListProducts.tsx
+// src/features/products/pages/ListProductos.tsx
 import { useState } from 'react';
 import { Search, Plus, MoreHorizontal, Edit, Trash2, Package } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -33,75 +25,48 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-import { useListProducts } from '../hooks/useListProducts';
-import { useListCategorias } from '../hooks/useListCategorias';
-import { useDeleteProducts } from '../hooks/useDeleteProducts';
-import { ProductoItem } from '../types/product-api.types';
-import { CreateProductModal } from '../components/products/CreateProductModal';
-import { EditProductModal } from '../components/products/EditProductModal';
+import { useListProductos } from '../hooks/useListProducts';
+import { useDeleteProducto } from '../hooks/useDeleteProducto';
+import { Producto } from '../types/product-api.types';
+import { CreateProductoModal } from '../components/products/CreateProductModal';
+import { EditProductoModal } from '../components/products/EditProductModal';
 
-export default function ListProducts() {
+export default function ListProductos() {
   const [search, setSearch] = useState('');
-  const [categoriaId, setCategoriaId] = useState<string | undefined>(undefined);
-  const [onlyActive, setOnlyActive] = useState<boolean | undefined>(undefined);
-  const [onlyInStock, setOnlyInStock] = useState<boolean | undefined>(undefined);
-  const [onlyLowStock, setOnlyLowStock] = useState<boolean | undefined>(undefined);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductoItem | null>(null);
+  const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
 
-  const { data, isLoading, error } = useListProducts({
-    search: search || undefined,
-    categoriaId,
-    onlyActive,
-    onlyInStock,
-    onlyLowStock,
+  const { data: productos, isLoading, error } = useListProductos({
+    nombre: search || undefined,
   });
 
-  const { data: categorias } = useListCategorias();
-  const deleteMutation = useDeleteProducts();
+  const deleteMutation = useDeleteProducto();
+  const productosArray = productos || [];
 
-  const handleEdit = (product: ProductoItem) => {
-    setSelectedProduct(product);
+  const handleEdit = (producto: Producto) => {
+    setSelectedProducto(producto);
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = (product: ProductoItem) => {
-    setSelectedProduct(product);
+  const handleDelete = (producto: Producto) => {
+    setSelectedProducto(producto);
     setIsDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
-    if (selectedProduct) {
-      deleteMutation.mutate(selectedProduct.id);
+    if (selectedProducto) {
+      deleteMutation.mutate(selectedProducto.id);
       setIsDeleteDialogOpen(false);
-      setSelectedProduct(null);
+      setSelectedProducto(null);
     }
-  };
-
-  const getStockBadge = (product: ProductoItem) => {
-    if (product.isOutOfStock) {
-      return { label: 'Sin Stock', variant: 'destructive' as const };
-    }
-    if (product.isLowStock) {
-      return { label: 'Stock Bajo', variant: 'secondary' as const };
-    }
-    return { label: 'En Stock', variant: 'default' as const };
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
+        <Skeleton className="h-8 w-64" />
         <Skeleton className="h-96 w-full" />
       </div>
     );
@@ -109,13 +74,11 @@ export default function ListProducts() {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <p className="text-destructive">Error al cargar los productos</p>
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            Intentar nuevamente
-          </Button>
-        </div>
+      <div className="text-center py-12">
+        <p className="text-destructive">Error al cargar los productos</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Intentar nuevamente
+        </Button>
       </div>
     );
   }
@@ -124,91 +87,32 @@ export default function ListProducts() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Productos</h1>
-          <p className="text-muted-foreground">
-            Administra el inventario de productos disponibles
-          </p>
+        <div>
+          <h1 className="text-3xl font-bold">Gestión de Productos</h1>
+          <p className="text-muted-foreground">Administra el catálogo de productos</p>
         </div>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          <Plus className="w-4 h-4" />
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
           Nuevo Producto
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.total || 0}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
+      {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar productos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={categoriaId || "all"} onValueChange={(value) => setCategoriaId(value === "all" ? undefined : value)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  {categorias?.categorias.map((categoria) => (
-                    <SelectItem key={categoria.id} value={categoria.id}>
-                      {categoria.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Button
-                variant={onlyActive === true ? "default" : "outline"}
-                size="sm"
-                onClick={() => setOnlyActive(onlyActive === true ? undefined : true)}
-              >
-                Solo Activos
-              </Button>
-              
-              <Button
-                variant={onlyInStock === true ? "default" : "outline"}
-                size="sm"
-                onClick={() => setOnlyInStock(onlyInStock === true ? undefined : true)}
-              >
-                En Stock
-              </Button>
-              
-              <Button
-                variant={onlyLowStock === true ? "default" : "outline"}
-                size="sm"
-                onClick={() => setOnlyLowStock(onlyLowStock === true ? undefined : true)}
-              >
-                Stock Bajo
-              </Button>
-            </div>
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar productos..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </CardContent>
       </Card>
 
-      {/* Table */}
+      {/* Tabla NUEVA */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -216,117 +120,215 @@ export default function ListProducts() {
               <thead className="border-b bg-muted/50">
                 <tr>
                   <th className="text-left p-4 font-medium">Producto</th>
-                  <th className="text-left p-4 font-medium">Categoría</th>
                   <th className="text-left p-4 font-medium">Precio</th>
-                  <th className="text-left p-4 font-medium">Stock</th>
-                  <th className="text-left p-4 font-medium">Sabores</th>
-                  <th className="text-left p-4 font-medium">Estado</th>
+                  <th className="text-left p-4 font-medium">Información Nutricional</th>
+                  <th className="text-left p-4 font-medium">Ingredientes & Etiquetas</th>
+                  <th className="text-left p-4 font-medium">Momentos Recomendados</th>
                   <th className="text-right p-4 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {data?.productos.map((product) => {
-                  const stockBadge = getStockBadge(product);
-                  return (
-                    <tr key={product.id} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/60 rounded-lg flex items-center justify-center">
-                            <Package className="w-5 h-5 text-primary-foreground" />
+                {productosArray.map((producto) => (
+                  <tr key={producto.id} className="border-b hover:bg-muted/50">
+                    {/* COLUMNA 1: PRODUCTO */}
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        {producto.urlImagen ? (
+                          <img 
+                            src={producto.urlImagen!} 
+                            alt={producto.nombre}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Package className="w-6 h-6 text-primary" />
                           </div>
-                          <div>
-                            <p className="font-medium">{product.nombre}</p>
-                            <p className="text-sm text-muted-foreground truncate max-w-xs">
-                              {product.descripcion || 'Sin descripción'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
+                        )}
                         <div>
-                          <p className="text-sm font-medium">{product.categoria.nombre}</p>
-                          <p className="text-xs text-muted-foreground">{product.categoria.tipoProducto}</p>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <p className="font-medium">S/ {product.precio.toFixed(2)}</p>
-                      </td>
-                      <td className="p-4">
-                        <div className="space-y-1">
-                          <Badge variant={stockBadge.variant}>
-                            {stockBadge.label}
-                          </Badge>
-                          <p className="text-xs text-muted-foreground">
-                            {product.stock} / min: {product.stockMinimo}
+                          <p className="font-semibold">{producto.nombre}</p>
+                          {producto.descripcion && (
+                            <p className="text-sm text-muted-foreground max-w-xs line-clamp-2">
+                              {producto.descripcion}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(producto.fechaCreacion).toLocaleDateString('es-ES')}
                           </p>
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap gap-1">
-                          {product.sabores.slice(0, 2).map((sabor) => (
-                            <Badge key={sabor.id} variant="outline" className="text-xs">
-                              {sabor.nombre}
-                            </Badge>
-                          ))}
-                          {product.sabores.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{product.sabores.length - 2}
-                            </Badge>
+                      </div>
+                    </td>
+
+                    {/* COLUMNA 2: PRECIO */}
+                    <td className="p-4 text-center">
+                      <div>
+                        <p className="font-bold text-xl text-green-600">
+                          {`S/ ${producto.precio.toFixed(2)}`}
+                        </p>
+                      </div>
+                    </td>
+
+                    {/* COLUMNA 3: INFO NUTRICIONAL */}
+                    <td className="p-4">
+                      {producto.proteina && (
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          {producto.proteina && (
+                            <div className="bg-blue-50 px-2 py-1 rounded flex justify-between">
+                              <span className="text-blue-700">Proteína</span>
+                              <span className="font-bold text-blue-900">{producto.proteina}g</span>
+                            </div>
+                          )}
+                          {producto.calorias && (
+                            <div className="bg-orange-50 px-2 py-1 rounded flex justify-between">
+                              <span className="text-orange-700">Calorías</span>
+                              <span className="font-bold text-orange-900">{producto.calorias}</span>
+                            </div>
+                          )}
+                          {producto.carbohidratos && (
+                            <div className="bg-green-50 px-2 py-1 rounded flex justify-between">
+                              <span className="text-green-700">Carbos</span>
+                              <span className="font-bold text-green-900">{producto.carbohidratos}g</span>
+                            </div>
+                          )}
+                          {producto.grasas && (
+                            <div className="bg-yellow-50 px-2 py-1 rounded flex justify-between">
+                              <span className="text-yellow-700">Grasas</span>
+                              <span className="font-bold text-yellow-900">{producto.grasas}g</span>
+                            </div>
+                          )}
+                          {producto.fibra && (
+                            <div className="bg-purple-50 px-2 py-1 rounded flex justify-between">
+                              <span className="text-purple-700">Fibra</span>
+                              <span className="font-bold text-purple-900">{producto.fibra}g</span>
+                            </div>
+                          )}
+                          {producto.azucar && (
+                            <div className="bg-pink-50 px-2 py-1 rounded flex justify-between">
+                              <span className="text-pink-700">Azúcar</span>
+                              <span className="font-bold text-pink-900">{producto.azucar}g</span>
+                            </div>
                           )}
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="space-y-1">
-                          <Badge variant={product.activo ? "default" : "secondary"}>
-                            {product.activo ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(product.fechaCreacion).toLocaleDateString()}
+                      )}
+                    </td>
+
+                    {/* COLUMNA 4: INGREDIENTES & ETIQUETAS */}
+                    <td className="p-4">
+                      <div className="space-y-2">
+                        {/* Ingredientes */}
+                        {producto.ingredientes && (
+                          <div>
+                            <p className="text-xs font-bold text-gray-700 mb-1">
+                              🥄 Ingredientes ({producto.ingredientes.length})
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {producto.ingredientes.slice(0, 2).map((ingrediente, idx) => (
+                                <span key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded border">
+                                  {ingrediente}
+                                </span>
+                              ))}
+                              {producto.ingredientes.length > 2 && (
+                                <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                                  +{producto.ingredientes.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Etiquetas */}
+                        {producto.etiquetas && (
+                          <div>
+                            <p className="text-xs font-bold text-blue-700 mb-1">
+                              🏷️ Etiquetas ({producto.etiquetas.length})
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {producto.etiquetas.slice(0, 2).map((etiqueta, idx) => (
+                                <span key={idx} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded border border-blue-200">
+                                  {etiqueta}
+                                </span>
+                              ))}
+                              {producto.etiquetas.length > 2 && (
+                                <span className="text-xs bg-blue-200 px-2 py-1 rounded">
+                                  +{producto.etiquetas.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* COLUMNA 5: MOMENTOS RECOMENDADOS */}
+                    <td className="p-4">
+                      {producto.momentosRecomendados ? (
+                        <div>
+                          <p className="text-xs font-bold text-purple-700 mb-2">
+                            ⏰ Momentos ({producto.momentosRecomendados.length})
                           </p>
+                          <div className="space-y-1">
+                            {producto.momentosRecomendados.map((momento) => {
+                              const momentoConfig: Record<string, { emoji: string; label: string; bg: string }> = {
+                                'MANANA': { emoji: '🌅', label: 'Mañana', bg: 'bg-yellow-100 text-yellow-800' },
+                                'PRE_ENTRENAMIENTO': { emoji: '💪', label: 'Pre-entreno', bg: 'bg-red-100 text-red-800' },
+                                'POST_ENTRENAMIENTO': { emoji: '🏋️', label: 'Post-entreno', bg: 'bg-green-100 text-green-800' },
+                                'TARDE': { emoji: '🌇', label: 'Tarde', bg: 'bg-orange-100 text-orange-800' },
+                                'NOCHE': { emoji: '🌙', label: 'Noche', bg: 'bg-indigo-100 text-indigo-800' },
+                                'ANTES_DORMIR': { emoji: '😴', label: 'Antes dormir', bg: 'bg-purple-100 text-purple-800' }
+                              };
+                              const config = momentoConfig[momento] || { emoji: '⭐', label: momento, bg: 'bg-gray-100 text-gray-800' };
+                              return (
+                                <div key={momento} className={`text-xs px-2 py-1 rounded ${config.bg} flex items-center gap-1`}>
+                                  <span>{config.emoji}</span>
+                                  <span className="font-medium">{config.label}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEdit(product)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(product)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  );
-                })}
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Sin momentos</span>
+                      )}
+                    </td>
+
+                    {/* COLUMNA 6: ACCIONES */}
+                    <td className="p-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleEdit(producto)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(producto)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
           
-          {(!data?.productos || data.productos.length === 0) && (
+          {productosArray.length === 0 && (
             <div className="text-center py-12">
               <Package className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium">No hay productos</h3>
               <p className="text-muted-foreground">
-                {search ? 'No se encontraron productos con los filtros aplicados.' : 'Comienza creando tu primer producto.'}
+                {search ? 'No se encontraron productos.' : 'Comienza creando tu primer producto.'}
               </p>
-              <Button 
-                className="mt-4" 
-                onClick={() => setIsCreateModalOpen(true)}
-              >
+              <Button className="mt-4" onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Crear Primer Producto
               </Button>
@@ -336,15 +338,15 @@ export default function ListProducts() {
       </Card>
 
       {/* Modales */}
-      <CreateProductModal 
+      <CreateProductoModal 
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
       />
       
-      <EditProductModal 
+      <EditProductoModal 
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
-        product={selectedProduct}
+        producto={selectedProducto}
       />
 
       {/* Delete Dialog */}
@@ -353,13 +355,7 @@ export default function ListProducts() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El producto "{selectedProduct?.nombre}" 
-              será eliminado permanentemente del inventario.
-              {selectedProduct?.stock && selectedProduct.stock > 0 && (
-                <span className="block mt-2 text-orange-600 font-medium">
-                  ⚠️ Este producto tiene {selectedProduct.stock} unidades en stock.
-                </span>
-              )}
+              El producto "{selectedProducto?.nombre}" será eliminado permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -27,32 +27,37 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { useListSabores } from '../hooks/useListSabores';
-import { useDeleteSabores } from '../hooks/useDeleteSabores';
-import { SaborItem } from '../types/product-api.types';
+import { useDeleteSabor } from '../hooks/useDeleteSabor';
+import { Sabor } from '../types/product-api.types';
 import { CreateSaborModal } from '../components/sabores/CreateSaborModal';
 import { EditSaborModal } from '../components/sabores/EditSaborModal';
 
 export default function ListSabores() {
   const [search, setSearch] = useState('');
-  const [onlyActive, setOnlyActive] = useState<boolean | undefined>(undefined);
+  const [conDescripcion, setConDescripcion] = useState<boolean | undefined>(undefined);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedSabor, setSelectedSabor] = useState<SaborItem | null>(null);
+  const [selectedSabor, setSelectedSabor] = useState<Sabor | null>(null);
 
-  const { data, isLoading, error } = useListSabores({
-    search: search || undefined,
-    onlyActive,
+  const { data: sabores, isLoading, error } = useListSabores({
+    nombre: search || undefined,
+    conDescripcion,
   });
 
-  const deleteMutation = useDeleteSabores();
+  console.log(sabores);
 
-  const handleEdit = (sabor: SaborItem) => {
+  const deleteMutation = useDeleteSabor();
+
+  // Ahora sabores ya es un array directo
+  const saboresArray = sabores || [];
+
+  const handleEdit = (sabor: Sabor) => {
     setSelectedSabor(sabor);
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = (sabor: SaborItem) => {
+  const handleDelete = (sabor: Sabor) => {
     setSelectedSabor(sabor);
     setIsDeleteDialogOpen(true);
   };
@@ -95,6 +100,10 @@ export default function ListSabores() {
     );
   }
 
+  const activeSabores = saboresArray?.filter(s => s.activo) || [];
+  const inactiveSabores = saboresArray?.filter(s => !s.activo) || [];
+  const saboresConDescripcion = saboresArray?.filter(s => s.descripcion) || [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -122,7 +131,30 @@ export default function ListSabores() {
             <Palette className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.total || 0}</div>
+            <div className="text-2xl font-bold">{saboresArray?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {activeSabores.length} activos, {inactiveSabores.length} inactivos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Sabores Activos</CardTitle>
+            <Palette className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{activeSabores.length}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Con Descripción</CardTitle>
+            <Palette className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{saboresConDescripcion.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -142,11 +174,19 @@ export default function ListSabores() {
             </div>
             <div className="flex gap-2">
               <Button
-                variant={onlyActive === true ? "default" : "outline"}
+                variant={conDescripcion === true ? "default" : "outline"}
                 size="sm"
-                onClick={() => setOnlyActive(onlyActive === true ? undefined : true)}
+                onClick={() => setConDescripcion(conDescripcion === true ? undefined : true)}
               >
-                Solo Activos
+                Con Descripción
+              </Button>
+              
+              <Button
+                variant={conDescripcion === false ? "default" : "outline"}
+                size="sm"
+                onClick={() => setConDescripcion(conDescripcion === false ? undefined : false)}
+              >
+                Sin Descripción
               </Button>
             </div>
           </div>
@@ -162,37 +202,31 @@ export default function ListSabores() {
                 <tr>
                   <th className="text-left p-4 font-medium">Sabor</th>
                   <th className="text-left p-4 font-medium">Descripción</th>
-                  <th className="text-left p-4 font-medium">Productos</th>
                   <th className="text-left p-4 font-medium">Estado</th>
                   <th className="text-left p-4 font-medium">Fecha Creación</th>
                   <th className="text-right p-4 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {data?.sabores.map((sabor) => (
+                {saboresArray?.map((sabor) => (
                   <tr key={sabor.id} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center">
-                          <Palette className="w-4 h-4 text-primary-foreground" />
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
+                          <Palette className="w-5 h-5 text-white" />
                         </div>
                         <div>
                           <p className="font-medium">{sabor.nombre}</p>
-                          <p className="text-sm text-muted-foreground">ID: {sabor.id.slice(0, 8)}...</p>
+                          <p className="text-sm text-muted-foreground">ID: {sabor.id}</p>
                         </div>
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="text-sm text-muted-foreground max-w-xs truncate">
-                        {sabor.descripcion || 'Sin descripción'}
+                      <p className="text-sm max-w-xs truncate">
+                        {sabor.descripcion || (
+                          <span className="text-muted-foreground italic">Sin descripción</span>
+                        )}
                       </p>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {sabor.productCount || 0} producto(s)
-                        </Badge>
-                      </div>
                     </td>
                     <td className="p-4">
                       <Badge variant={sabor.activo ? "default" : "secondary"}>
@@ -200,14 +234,16 @@ export default function ListSabores() {
                       </Badge>
                     </td>
                     <td className="p-4">
-                      <p className="text-sm">
-                        {new Date(sabor.fechaCreacion).toLocaleDateString()}
-                      </p>
-                      {sabor.fechaActualizacion && (
-                        <p className="text-xs text-muted-foreground">
-                          Actualizado: {new Date(sabor.fechaActualizacion).toLocaleDateString()}
+                      <div className="space-y-1">
+                        <p className="text-sm">
+                          {new Date(sabor.fechaCreacion).toLocaleDateString()}
                         </p>
-                      )}
+                        {sabor.fechaActualizacion && (
+                          <p className="text-xs text-muted-foreground">
+                            Actualizado: {new Date(sabor.fechaActualizacion).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 text-right">
                       <DropdownMenu>
@@ -239,7 +275,7 @@ export default function ListSabores() {
             </table>
           </div>
           
-          {(!data?.sabores || data.sabores.length === 0) && (
+          {(!saboresArray || saboresArray.length === 0) && (
             <div className="text-center py-12">
               <Palette className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium">No hay sabores</h3>
@@ -277,12 +313,7 @@ export default function ListSabores() {
             <AlertDialogTitle>¿Eliminar sabor?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. El sabor "{selectedSabor?.nombre}" 
-              será eliminado permanentemente del sistema.
-              {selectedSabor?.productCount && selectedSabor.productCount > 0 && (
-                <span className="block mt-2 text-orange-600 font-medium">
-                  ⚠️ Este sabor está asociado a {selectedSabor.productCount} producto(s).
-                </span>
-              )}
+              será eliminado permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

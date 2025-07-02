@@ -1,21 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { productApi } from '../api/product.api';
+import { ListProductosParams } from '../types/product-api.types';
 
-interface UseListProductsParams {
-  search?: string;
-  categoriaId?: string;
-  onlyActive?: boolean;
-  onlyInStock?: boolean;
-  onlyLowStock?: boolean;
-  minPrice?: number;
-  maxPrice?: number;
-}
-
-export const useListProducts = (params?: UseListProductsParams) => {
+export const useListProductos = (params?: ListProductosParams) => {
   return useQuery({
-    queryKey: ['products', params],
+    queryKey: ['productos', params],
     queryFn: () => productApi.listProductos(params),
-    staleTime: 2 * 60 * 1000, // 2 minutos (datos más dinámicos por stock)
+    staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 };

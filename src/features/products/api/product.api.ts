@@ -6,10 +6,12 @@ import {
   GetTamanoByIdResponse,
   ListTamanosResponse,
   ListTamanosByVolumeResponse,
+  ListTamanosParams,
   // Categorías
   GetCategoriaByIdResponse,
   ListCategoriasResponse,
   ListCategoriasByTypeResponse,
+  ListCategoriasParams,
   // Sabores
   CreateSaborRequest,
   UpdateSaborRequest,
@@ -18,6 +20,7 @@ import {
   GetSaborByIdResponse,
   ListSaboresResponse,
   DeleteSaborResponse,
+  ListSaboresParams,
   // Productos
   CreateProductoRequest,
   UpdateProductoRequest,
@@ -25,7 +28,12 @@ import {
   UpdateProductoResponse,
   GetProductoByIdResponse,
   ListProductosResponse,
-  DeleteProductoResponse
+  DeleteProductoResponse,
+  ListProductosParams,
+  Producto,
+  Tamano,
+  Categoria,
+  Sabor
 } from '../types/product-api.types';
 
 export const productApi = {
@@ -40,18 +48,21 @@ export const productApi = {
     return response.data.data!;
   },
 
-  async listTamanos(): Promise<ListTamanosResponse> {
-    const response = await api.get<ListTamanosResponse>(INVENTORY_ENDPOINTS.TAMANOS.GET_ALL);
-    return response.data.data!;
+  async listTamanos(params?: ListTamanosParams): Promise<Tamano[]> {
+    const response = await api.get<ListTamanosResponse>(
+      INVENTORY_ENDPOINTS.TAMANOS.GET_ALL, 
+      {params}
+    );
+    return response.data.data!.tamanos;
   },
 
-  async getTamanosByVolume(min: number, max: number): Promise<ListTamanosByVolumeResponse> {
+  async getTamanosByVolume(min: number, max: number): Promise<Tamano[]> {
     const response = await api.get<ListTamanosByVolumeResponse>(
       INVENTORY_ENDPOINTS.TAMANOS.GET_BY_VOLUME
         .replace(':min', min.toString())
         .replace(':max', max.toString())
     );
-    return response.data.data!;
+    return response.data.data!.tamanos;
   },
 
   // =============================================
@@ -65,16 +76,19 @@ export const productApi = {
     return response.data.data!;
   },
 
-  async listCategorias(): Promise<ListCategoriasResponse> {
-    const response = await api.get<ListCategoriasResponse>(INVENTORY_ENDPOINTS.CATEGORIAS.GET_ALL);
-    return response.data.data!;
+  async listCategorias(params?: ListCategoriasParams): Promise<Categoria[]> {
+    const response = await api.get<ListCategoriasResponse>(
+      INVENTORY_ENDPOINTS.CATEGORIAS.GET_ALL,
+      {params}
+    );
+    return response.data.data!.categorias;
   },
 
-  async getCategoriasByType(tipoProducto: string): Promise<ListCategoriasByTypeResponse> {
+  async getCategoriasByType(tipoProducto: string): Promise<Categoria[]> {
     const response = await api.get<ListCategoriasByTypeResponse>(
       INVENTORY_ENDPOINTS.CATEGORIAS.GET_BY_TYPE.replace(':tipoProducto', tipoProducto)
     );
-    return response.data.data!;
+    return response.data.data!.categorias;
   },
 
   // =============================================
@@ -82,7 +96,10 @@ export const productApi = {
   // =============================================
 
   async createSabor(data: CreateSaborRequest): Promise<CreateSaborResponse> {
-    const response = await api.post<CreateSaborResponse>(INVENTORY_ENDPOINTS.SABORES.POST, data);
+    const response = await api.post<CreateSaborResponse>(
+      INVENTORY_ENDPOINTS.SABORES.POST, 
+      data
+    );
     return response.data.data!;
   },
 
@@ -98,15 +115,15 @@ export const productApi = {
     const response = await api.get<GetSaborByIdResponse>(
       INVENTORY_ENDPOINTS.SABORES.ID.replace(':id', id)
     );
-    return response.data.data!;
+    return response.data.data!; 
   },
 
-  async listSabores(params?: {
-    search?: string;
-    onlyActive?: boolean;
-  }): Promise<ListSaboresResponse> {
-    const response = await api.get<ListSaboresResponse>(INVENTORY_ENDPOINTS.SABORES.GET_ALL, params);
-    return response.data.data!;
+  async listSabores(params?: ListSaboresParams): Promise<Sabor[]> {
+    const response = await api.get<ListSaboresResponse>(
+      INVENTORY_ENDPOINTS.SABORES.GET_ALL,
+      {params}
+    );
+    return response.data.data!.sabores;
   },
 
   async deleteSabor(id: string): Promise<DeleteSaborResponse> {
@@ -121,7 +138,10 @@ export const productApi = {
   // =============================================
 
   async createProducto(data: CreateProductoRequest): Promise<CreateProductoResponse> {
-    const response = await api.post<CreateProductoResponse>(INVENTORY_ENDPOINTS.PRODUCTOS.POST, data);
+    const response = await api.post<CreateProductoResponse>(
+      INVENTORY_ENDPOINTS.PRODUCTOS.POST, 
+      data
+    );
     return response.data.data!;
   },
 
@@ -140,17 +160,12 @@ export const productApi = {
     return response.data.data!;
   },
 
-  async listProductos(params?: {
-    search?: string;
-    categoriaId?: string;
-    onlyActive?: boolean;
-    onlyInStock?: boolean;
-    onlyLowStock?: boolean;
-    minPrice?: number;
-    maxPrice?: number;
-  }): Promise<ListProductosResponse> {
-    const response = await api.get<ListProductosResponse>(INVENTORY_ENDPOINTS.PRODUCTOS.GET_ALL, params);
-    return response.data.data!;
+  async listProductos(params?: ListProductosParams): Promise<Producto[]> {
+    const response = await api.get<ListProductosResponse>(
+      INVENTORY_ENDPOINTS.PRODUCTOS.GET_ALL,
+      {params}
+    );
+    return response.data.data!.productos;
   },
 
   async deleteProducto(id: string): Promise<DeleteProductoResponse> {

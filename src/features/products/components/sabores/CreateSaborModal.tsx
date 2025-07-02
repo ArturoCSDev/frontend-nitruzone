@@ -16,15 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
-import { useRegisterSabores } from '../../hooks/useRegisterSabores';
+import { useCreateSabor } from '../../hooks/useCreateSabor';
 import { CreateSaborRequest } from '../../types/product-api.types';
 
 const createSaborSchema = z.object({
@@ -32,13 +25,12 @@ const createSaborSchema = z.object({
     .string()
     .min(1, 'El nombre es requerido')
     .min(2, 'El nombre debe tener al menos 2 caracteres')
-    .max(50, 'El nombre no puede exceder 50 caracteres'),
+    .max(100, 'El nombre no puede exceder 100 caracteres'),
   descripcion: z
     .string()
-    .max(200, 'La descripción no puede exceder 200 caracteres')
+    .max(500, 'La descripción no puede exceder 500 caracteres')
     .optional()
     .or(z.literal('')),
-  activo: z.boolean().default(true),
 });
 
 type CreateSaborFormData = z.infer<typeof createSaborSchema>;
@@ -49,27 +41,25 @@ interface CreateSaborModalProps {
 }
 
 export const CreateSaborModal = ({ open, onOpenChange }: CreateSaborModalProps) => {
-  const registerMutation = useRegisterSabores();
+  const createMutation = useCreateSabor();
 
   const form = useForm<CreateSaborFormData>({
     resolver: zodResolver(createSaborSchema),
     defaultValues: {
       nombre: '',
       descripcion: '',
-      activo: true,
     },
   });
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = form;
+  const { register, handleSubmit, formState: { errors }, reset } = form;
 
   const onSubmit = async (data: CreateSaborFormData) => {
     const requestData: CreateSaborRequest = {
-      nombre: data.nombre,
-      descripcion: data.descripcion || undefined,
-      activo: data.activo,
+      nombre: data.nombre.trim(),
+      descripcion: data.descripcion?.trim() || null,
     };
 
-    registerMutation.mutate(requestData, {
+    createMutation.mutate(requestData, {
       onSuccess: () => {
         reset();
         onOpenChange(false);
@@ -87,11 +77,11 @@ export const CreateSaborModal = ({ open, onOpenChange }: CreateSaborModalProps) 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Palette className="w-5 h-5 text-primary" />
+            <Palette className="w-5 h-5 text-orange-500" />
             Crear Nuevo Sabor
           </DialogTitle>
           <DialogDescription>
-            Añade un nuevo sabor al catálogo de productos disponibles.
+            Añade un nuevo sabor que podrá ser utilizado en los productos.
           </DialogDescription>
         </DialogHeader>
 
@@ -123,23 +113,9 @@ export const CreateSaborModal = ({ open, onOpenChange }: CreateSaborModalProps) 
             {errors.descripcion && (
               <p className="text-sm text-destructive">{errors.descripcion.message}</p>
             )}
-          </div>
-
-          {/* Estado */}
-          <div className="space-y-2">
-            <Label>Estado del Sabor</Label>
-            <Select 
-              value={watch('activo') ? 'true' : 'false'} 
-              onValueChange={(value) => setValue('activo', value === 'true')}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="true">Activo</SelectItem>
-                <SelectItem value="false">Inactivo</SelectItem>
-              </SelectContent>
-            </Select>
+            <p className="text-xs text-muted-foreground">
+              La descripción ayuda a los clientes a entender mejor el sabor
+            </p>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -147,16 +123,16 @@ export const CreateSaborModal = ({ open, onOpenChange }: CreateSaborModalProps) 
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={registerMutation.isPending}
+              disabled={createMutation.isPending}
             >
               Cancelar
             </Button>
             <Button 
               type="submit" 
-              disabled={registerMutation.isPending}
-              className="bg-primary hover:bg-primary/90"
+              disabled={createMutation.isPending}
+              className="bg-orange-500 hover:bg-orange-600"
             >
-              {registerMutation.isPending ? (
+              {createMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Creando...

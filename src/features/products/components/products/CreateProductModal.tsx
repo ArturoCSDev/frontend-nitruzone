@@ -1,4 +1,4 @@
-// src/features/products/components/products/CreateProductModal.tsx
+// src/features/products/components/productos/CreateProductoModal.tsx
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,90 +27,163 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 
-import { useRegisterProducts } from '../../hooks/useRegisterProducts';
+import { useCreateProducto } from '../../hooks/useCreateProducto';
 import { useListCategorias } from '../../hooks/useListCategorias';
 import { useListSabores } from '../../hooks/useListSabores';
 import { useListTamanos } from '../../hooks/useListTamanos';
 import { CreateProductoRequest } from '../../types/product-api.types';
 
-const createProductSchema = z.object({
+const createProductoSchema = z.object({
   nombre: z
     .string()
     .min(1, 'El nombre es requerido')
     .min(2, 'El nombre debe tener al menos 2 caracteres')
-    .max(100, 'El nombre no puede exceder 100 caracteres'),
+    .max(200, 'El nombre no puede exceder 200 caracteres'),
   descripcion: z
     .string()
-    .max(500, 'La descripción no puede exceder 500 caracteres')
+    .max(1000, 'La descripción no puede exceder 1000 caracteres')
     .optional()
     .or(z.literal('')),
   precio: z
     .number({ invalid_type_error: 'El precio debe ser un número' })
-    .min(0.01, 'El precio debe ser mayor a 0')
-    .max(9999.99, 'El precio no puede exceder S/ 9,999.99'),
-  stock: z
-    .number({ invalid_type_error: 'El stock debe ser un número' })
-    .min(0, 'El stock no puede ser negativo')
-    .int('El stock debe ser un número entero'),
-  stockMinimo: z
-    .number({ invalid_type_error: 'El stock mínimo debe ser un número' })
-    .min(0, 'El stock mínimo no puede ser negativo')
-    .int('El stock mínimo debe ser un número entero'),
+    .min(0.01, 'El precio debe ser mayor a 0'),
+  proteina: z
+    .number({ invalid_type_error: 'La proteína debe ser un número' })
+    .min(0, 'La proteína debe ser mayor o igual a 0')
+    .optional()
+    .nullable(),
+  calorias: z
+    .number({ invalid_type_error: 'Las calorías deben ser un número' })
+    .min(0, 'Las calorías deben ser mayor o igual a 0')
+    .optional()
+    .nullable(),
+  volumen: z
+    .number({ invalid_type_error: 'El volumen debe ser un número' })
+    .min(0, 'El volumen debe ser mayor o igual a 0')
+    .optional()
+    .nullable(),
+  carbohidratos: z
+    .number({ invalid_type_error: 'Los carbohidratos deben ser un número' })
+    .min(0, 'Los carbohidratos deben ser mayor o igual a 0')
+    .optional()
+    .nullable(),
+  grasas: z
+    .number({ invalid_type_error: 'Las grasas deben ser un número' })
+    .min(0, 'Las grasas deben ser mayor o igual a 0')
+    .optional()
+    .nullable(),
+  fibra: z
+    .number({ invalid_type_error: 'La fibra debe ser un número' })
+    .min(0, 'La fibra debe ser mayor o igual a 0')
+    .optional()
+    .nullable(),
+  azucar: z
+    .number({ invalid_type_error: 'El azúcar debe ser un número' })
+    .min(0, 'El azúcar debe ser mayor o igual a 0')
+    .optional()
+    .nullable(),
   categoriaId: z
     .string()
-    .min(1, 'Debe seleccionar una categoría'),
-  activo: z.boolean().default(true),
+    .min(1, 'Debe seleccionar una categoría')
+    .optional()
+    .nullable(),
+  saborId: z
+    .string()
+    .optional()
+    .nullable(),
+  tamanoId: z
+    .string()
+    .optional()
+    .nullable(),
+  urlImagen: z
+    .string()
+    .url('Debe ser una URL válida')
+    .optional()
+    .or(z.literal('')),
 });
 
-type CreateProductFormData = z.infer<typeof createProductSchema>;
+type CreateProductoFormData = z.infer<typeof createProductoSchema>;
 
-interface CreateProductModalProps {
+interface CreateProductoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const CreateProductModal = ({ open, onOpenChange }: CreateProductModalProps) => {
-  const [selectedSabores, setSelectedSabores] = useState<string[]>([]);
-  const [selectedTamanos, setSelectedTamanos] = useState<string[]>([]);
+export const CreateProductoModal = ({ open, onOpenChange }: CreateProductoModalProps) => {
+  const [selectedIngredientes, setSelectedIngredientes] = useState<string[]>([]);
+  const [selectedEtiquetas, setSelectedEtiquetas] = useState<string[]>([]);
+  const [selectedMomentos, setSelectedMomentos] = useState<string[]>([]);
+  const [newIngrediente, setNewIngrediente] = useState('');
+  const [newEtiqueta, setNewEtiqueta] = useState('');
 
-  const registerMutation = useRegisterProducts();
+  const createMutation = useCreateProducto();
   const { data: categorias } = useListCategorias();
-  const { data: sabores } = useListSabores({ onlyActive: true });
+  const { data: sabores } = useListSabores();
   const { data: tamanos } = useListTamanos();
 
-  const form = useForm<CreateProductFormData>({
-    resolver: zodResolver(createProductSchema),
+  // Convertir a arrays seguros
+  const categoriasArray = Array.isArray(categorias) ? categorias : [];
+  const saboresArray = Array.isArray(sabores) ? sabores : [];
+  const tamanosArray = Array.isArray(tamanos) ? tamanos : [];
+
+  const momentosOptions = [
+    { value: 'MANANA', label: 'Mañana' },
+    { value: 'PRE_ENTRENAMIENTO', label: 'Pre-entrenamiento' },
+    { value: 'POST_ENTRENAMIENTO', label: 'Post-entrenamiento' },
+    { value: 'TARDE', label: 'Tarde' },
+    { value: 'NOCHE', label: 'Noche' },
+    { value: 'ANTES_DORMIR', label: 'Antes de dormir' },
+  ] as const;
+
+  const form = useForm<CreateProductoFormData>({
+    resolver: zodResolver(createProductoSchema),
     defaultValues: {
       nombre: '',
       descripcion: '',
       precio: 0,
-      stock: 0,
-      stockMinimo: 5,
-      categoriaId: '',
-      activo: true,
+      proteina: null,
+      calorias: null,
+      volumen: null,
+      carbohidratos: null,
+      grasas: null,
+      fibra: null,
+      azucar: null,
+      categoriaId: null,
+      saborId: null,
+      tamanoId: null,
+      urlImagen: '',
     },
   });
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = form;
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = form;
 
-  const onSubmit = async (data: CreateProductFormData) => {
+  const onSubmit = async (data: CreateProductoFormData) => {
     const requestData: CreateProductoRequest = {
       nombre: data.nombre,
-      descripcion: data.descripcion || undefined,
+      descripcion: data.descripcion || null,
       precio: data.precio,
-      stock: data.stock,
-      stockMinimo: data.stockMinimo,
-      categoriaId: data.categoriaId,
-      saboreIds: selectedSabores.length > 0 ? selectedSabores : undefined,
-      tamanoIds: selectedTamanos.length > 0 ? selectedTamanos : undefined,
-      activo: data.activo,
+      proteina: data.proteina || null,
+      calorias: data.calorias || null,
+      volumen: data.volumen || null,
+      carbohidratos: data.carbohidratos || null,
+      grasas: data.grasas || null,
+      fibra: data.fibra || null,
+      azucar: data.azucar || null,
+      categoriaId: data.categoriaId || null,
+      saborId: data.saborId || null,
+      tamanoId: data.tamanoId || null,
+      urlImagen: data.urlImagen || null,
+      ingredientes: selectedIngredientes,
+      etiquetas: selectedEtiquetas,
+      momentosRecomendados: selectedMomentos as ('MANANA' | 'PRE_ENTRENAMIENTO' | 'POST_ENTRENAMIENTO' | 'TARDE' | 'NOCHE' | 'ANTES_DORMIR')[],
     };
 
-    registerMutation.mutate(requestData, {
+    createMutation.mutate(requestData, {
       onSuccess: () => {
         reset();
-        setSelectedSabores([]);
-        setSelectedTamanos([]);
+        setSelectedIngredientes([]);
+        setSelectedEtiquetas([]);
+        setSelectedMomentos([]);
         onOpenChange(false);
       },
     });
@@ -118,45 +191,52 @@ export const CreateProductModal = ({ open, onOpenChange }: CreateProductModalPro
 
   const handleClose = () => {
     reset();
-    setSelectedSabores([]);
-    setSelectedTamanos([]);
+    setSelectedIngredientes([]);
+    setSelectedEtiquetas([]);
+    setSelectedMomentos([]);
     onOpenChange(false);
   };
 
-  const toggleSabor = (saborId: string) => {
-    setSelectedSabores(prev => 
-      prev.includes(saborId) 
-        ? prev.filter(id => id !== saborId)
-        : [...prev, saborId]
+  const addIngrediente = () => {
+    if (newIngrediente.trim() && !selectedIngredientes.includes(newIngrediente.trim())) {
+      setSelectedIngredientes([...selectedIngredientes, newIngrediente.trim()]);
+      setNewIngrediente('');
+    }
+  };
+
+  const removeIngrediente = (ingrediente: string) => {
+    setSelectedIngredientes(selectedIngredientes.filter(i => i !== ingrediente));
+  };
+
+  const addEtiqueta = () => {
+    if (newEtiqueta.trim() && !selectedEtiquetas.includes(newEtiqueta.trim())) {
+      setSelectedEtiquetas([...selectedEtiquetas, newEtiqueta.trim()]);
+      setNewEtiqueta('');
+    }
+  };
+
+  const removeEtiqueta = (etiqueta: string) => {
+    setSelectedEtiquetas(selectedEtiquetas.filter(e => e !== etiqueta));
+  };
+
+  const toggleMomento = (momento: string) => {
+    setSelectedMomentos(prev => 
+      prev.includes(momento) 
+        ? prev.filter(m => m !== momento)
+        : [...prev, momento]
     );
-  };
-
-  const toggleTamano = (tamanoId: string) => {
-    setSelectedTamanos(prev => 
-      prev.includes(tamanoId) 
-        ? prev.filter(id => id !== tamanoId)
-        : [...prev, tamanoId]
-    );
-  };
-
-  const removeSabor = (saborId: string) => {
-    setSelectedSabores(prev => prev.filter(id => id !== saborId));
-  };
-
-  const removeTamano = (tamanoId: string) => {
-    setSelectedTamanos(prev => prev.filter(id => id !== tamanoId));
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5 text-primary" />
             Crear Nuevo Producto
           </DialogTitle>
           <DialogDescription>
-            Añade un nuevo producto al inventario con toda su información.
+            Añade un nuevo producto al catálogo con toda su información.
           </DialogDescription>
         </DialogHeader>
 
@@ -177,41 +257,35 @@ export const CreateProductModal = ({ open, onOpenChange }: CreateProductModalPro
               )}
             </div>
 
-            {/* Categoría */}
+            {/* Precio */}
             <div className="space-y-2">
-              <Label>Categoría *</Label>
-              <Select onValueChange={(value) => setValue('categoriaId', value)}>
-                <SelectTrigger className={errors.categoriaId ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Seleccionar categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categorias?.categorias.map((categoria) => (
-                    <SelectItem key={categoria.id} value={categoria.id}>
-                      {categoria.nombre} - {categoria.tipoProducto}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.categoriaId && (
-                <p className="text-sm text-destructive">{errors.categoriaId.message}</p>
+              <Label htmlFor="precio">Precio (S/) *</Label>
+              <Input
+                id="precio"
+                type="number"
+                step="0.01"
+                placeholder="99.99"
+                {...register('precio', { valueAsNumber: true })}
+                className={errors.precio ? 'border-destructive' : ''}
+              />
+              {errors.precio && (
+                <p className="text-sm text-destructive">{errors.precio.message}</p>
               )}
             </div>
 
-            {/* Estado */}
+            {/* URL Imagen */}
             <div className="space-y-2">
-              <Label>Estado del Producto</Label>
-              <Select 
-                value={watch('activo') ? 'true' : 'false'} 
-                onValueChange={(value) => setValue('activo', value === 'true')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Activo</SelectItem>
-                  <SelectItem value="false">Inactivo</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="urlImagen">URL de Imagen (opcional)</Label>
+              <Input
+                id="urlImagen"
+                type="url"
+                placeholder="https://ejemplo.com/imagen.jpg"
+                {...register('urlImagen')}
+                className={errors.urlImagen ? 'border-destructive' : ''}
+              />
+              {errors.urlImagen && (
+                <p className="text-sm text-destructive">{errors.urlImagen.message}</p>
+              )}
             </div>
           </div>
 
@@ -230,129 +304,269 @@ export const CreateProductModal = ({ open, onOpenChange }: CreateProductModalPro
             )}
           </div>
 
-          {/* Información de precio y stock */}
+          {/* Relaciones */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Precio */}
+            {/* Categoría */}
             <div className="space-y-2">
-              <Label htmlFor="precio">Precio (S/) *</Label>
-              <Input
-                id="precio"
-                type="number"
-                step="0.01"
-                placeholder="99.99"
-                {...register('precio', { valueAsNumber: true })}
-                className={errors.precio ? 'border-destructive' : ''}
-              />
-              {errors.precio && (
-                <p className="text-sm text-destructive">{errors.precio.message}</p>
-              )}
+              <Label>Categoría (opcional)</Label>
+              <Select onValueChange={(value) => setValue('categoriaId', value === 'none' ? null : value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {categoriasArray?.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.id}>
+                      {categoria.nombre} - {categoria.tipoProducto}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Stock */}
+            {/* Sabor */}
             <div className="space-y-2">
-              <Label htmlFor="stock">Stock Actual *</Label>
-              <Input
-                id="stock"
-                type="number"
-                placeholder="100"
-                {...register('stock', { valueAsNumber: true })}
-                className={errors.stock ? 'border-destructive' : ''}
-              />
-              {errors.stock && (
-                <p className="text-sm text-destructive">{errors.stock.message}</p>
-              )}
+              <Label>Sabor (opcional)</Label>
+              <Select onValueChange={(value) => setValue('saborId', value === 'none' ? null : value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar sabor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin sabor</SelectItem>
+                  {saboresArray?.map((sabor) => (
+                    <SelectItem key={sabor.id} value={sabor.id}>
+                      {sabor.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Stock Mínimo */}
+            {/* Tamaño */}
             <div className="space-y-2">
-              <Label htmlFor="stockMinimo">Stock Mínimo *</Label>
-              <Input
-                id="stockMinimo"
-                type="number"
-                placeholder="5"
-                {...register('stockMinimo', { valueAsNumber: true })}
-                className={errors.stockMinimo ? 'border-destructive' : ''}
-              />
-              {errors.stockMinimo && (
-                <p className="text-sm text-destructive">{errors.stockMinimo.message}</p>
-              )}
+              <Label>Tamaño (opcional)</Label>
+              <Select onValueChange={(value) => setValue('tamanoId', value === 'none' ? null : value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tamaño" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin tamaño</SelectItem>
+                  {tamanosArray?.map((tamano) => (
+                    <SelectItem key={tamano.id} value={tamano.id}>
+                      {tamano.nombre} ({tamano.volumen}ml)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Sabores */}
+          {/* Información nutricional */}
           <div className="space-y-3">
-            <Label>Sabores Disponibles (opcional)</Label>
-            {selectedSabores.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
-                {selectedSabores.map((saborId) => {
-                  const sabor = sabores?.sabores.find(s => s.id === saborId);
-                  return (
-                    <Badge key={saborId} variant="secondary" className="flex items-center gap-1">
-                      {sabor?.nombre}
-                      <X 
-                        className="w-3 h-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => removeSabor(saborId)}
-                      />
-                    </Badge>
-                  );
-                })}
+            <Label className="text-base font-medium">Información Nutricional (opcional)</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Proteína */}
+              <div className="space-y-2">
+                <Label htmlFor="proteina">Proteína (g)</Label>
+                <Input
+                  id="proteina"
+                  type="number"
+                  step="0.1"
+                  placeholder="25.5"
+                  {...register('proteina', { valueAsNumber: true })}
+                  className={errors.proteina ? 'border-destructive' : ''}
+                />
+                {errors.proteina && (
+                  <p className="text-sm text-destructive">{errors.proteina.message}</p>
+                )}
               </div>
-            )}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border rounded-lg">
-              {sabores?.sabores.map((sabor) => (
-                <div key={sabor.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`sabor-${sabor.id}`}
-                    checked={selectedSabores.includes(sabor.id)}
-                    onCheckedChange={() => toggleSabor(sabor.id)}
-                  />
-                  <Label 
-                    htmlFor={`sabor-${sabor.id}`}
-                    className="text-sm cursor-pointer truncate"
-                  >
-                    {sabor.nombre}
-                  </Label>
-                </div>
-              ))}
+
+              {/* Calorías */}
+              <div className="space-y-2">
+                <Label htmlFor="calorias">Calorías</Label>
+                <Input
+                  id="calorias"
+                  type="number"
+                  placeholder="120"
+                  {...register('calorias', { valueAsNumber: true })}
+                  className={errors.calorias ? 'border-destructive' : ''}
+                />
+                {errors.calorias && (
+                  <p className="text-sm text-destructive">{errors.calorias.message}</p>
+                )}
+              </div>
+
+              {/* Volumen */}
+              <div className="space-y-2">
+                <Label htmlFor="volumen">Volumen (ml)</Label>
+                <Input
+                  id="volumen"
+                  type="number"
+                  placeholder="350"
+                  {...register('volumen', { valueAsNumber: true })}
+                  className={errors.volumen ? 'border-destructive' : ''}
+                />
+                {errors.volumen && (
+                  <p className="text-sm text-destructive">{errors.volumen.message}</p>
+                )}
+              </div>
+
+              {/* Carbohidratos */}
+              <div className="space-y-2">
+                <Label htmlFor="carbohidratos">Carbohidratos (g)</Label>
+                <Input
+                  id="carbohidratos"
+                  type="number"
+                  step="0.1"
+                  placeholder="5.2"
+                  {...register('carbohidratos', { valueAsNumber: true })}
+                  className={errors.carbohidratos ? 'border-destructive' : ''}
+                />
+                {errors.carbohidratos && (
+                  <p className="text-sm text-destructive">{errors.carbohidratos.message}</p>
+                )}
+              </div>
+
+              {/* Grasas */}
+              <div className="space-y-2">
+                <Label htmlFor="grasas">Grasas (g)</Label>
+                <Input
+                  id="grasas"
+                  type="number"
+                  step="0.1"
+                  placeholder="1.5"
+                  {...register('grasas', { valueAsNumber: true })}
+                  className={errors.grasas ? 'border-destructive' : ''}
+                />
+                {errors.grasas && (
+                  <p className="text-sm text-destructive">{errors.grasas.message}</p>
+                )}
+              </div>
+
+              {/* Fibra */}
+              <div className="space-y-2">
+                <Label htmlFor="fibra">Fibra (g)</Label>
+                <Input
+                  id="fibra"
+                  type="number"
+                  step="0.1"
+                  placeholder="2.0"
+                  {...register('fibra', { valueAsNumber: true })}
+                  className={errors.fibra ? 'border-destructive' : ''}
+                />
+                {errors.fibra && (
+                  <p className="text-sm text-destructive">{errors.fibra.message}</p>
+                )}
+              </div>
+
+              {/* Azúcar */}
+              <div className="space-y-2">
+                <Label htmlFor="azucar">Azúcar (g)</Label>
+                <Input
+                  id="azucar"
+                  type="number"
+                  step="0.1"
+                  placeholder="3.0"
+                  {...register('azucar', { valueAsNumber: true })}
+                  className={errors.azucar ? 'border-destructive' : ''}
+                />
+                {errors.azucar && (
+                  <p className="text-sm text-destructive">{errors.azucar.message}</p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Tamaños */}
+          {/* Ingredientes */}
           <div className="space-y-3">
-            <Label>Tamaños Disponibles (opcional)</Label>
-            {selectedTamanos.length > 0 && (
+            <Label>Ingredientes (opcional)</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Agregar ingrediente..."
+                value={newIngrediente}
+                onChange={(e) => setNewIngrediente(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addIngrediente())}
+              />
+              <Button type="button" variant="outline" onClick={addIngrediente}>
+                Agregar
+              </Button>
+            </div>
+            {selectedIngredientes.length > 0 && (
               <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
-                {selectedTamanos.map((tamanoId) => {
-                  const tamano = tamanos?.tamanos.find(t => t.id === tamanoId);
-                  return (
-                    <Badge key={tamanoId} variant="secondary" className="flex items-center gap-1">
-                      {tamano?.nombre} ({tamano?.volumen} {tamano?.unidadMedida})
-                      <X 
-                        className="w-3 h-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => removeTamano(tamanoId)}
-                      />
-                    </Badge>
-                  );
-                })}
+                {selectedIngredientes.map((ingrediente, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    {ingrediente}
+                    <X 
+                      className="w-3 h-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => removeIngrediente(ingrediente)}
+                    />
+                  </Badge>
+                ))}
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-lg">
-              {tamanos?.tamanos.map((tamano) => (
-                <div key={tamano.id} className="flex items-center space-x-2">
+          </div>
+
+          {/* Etiquetas */}
+          <div className="space-y-3">
+            <Label>Etiquetas (opcional)</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Agregar etiqueta..."
+                value={newEtiqueta}
+                onChange={(e) => setNewEtiqueta(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addEtiqueta())}
+              />
+              <Button type="button" variant="outline" onClick={addEtiqueta}>
+                Agregar
+              </Button>
+            </div>
+            {selectedEtiquetas.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
+                {selectedEtiquetas.map((etiqueta, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    {etiqueta}
+                    <X 
+                      className="w-3 h-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => removeEtiqueta(etiqueta)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Momentos recomendados */}
+          <div className="space-y-3">
+            <Label>Momentos Recomendados (opcional)</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {momentosOptions.map((momento) => (
+                <div key={momento.value} className="flex items-center space-x-2">
                   <Checkbox
-                    id={`tamano-${tamano.id}`}
-                    checked={selectedTamanos.includes(tamano.id)}
-                    onCheckedChange={() => toggleTamano(tamano.id)}
+                    id={`momento-${momento.value}`}
+                    checked={selectedMomentos.includes(momento.value)}
+                    onCheckedChange={() => toggleMomento(momento.value)}
                   />
                   <Label 
-                    htmlFor={`tamano-${tamano.id}`}
+                    htmlFor={`momento-${momento.value}`}
                     className="text-sm cursor-pointer"
                   >
-                    {tamano.nombre} ({tamano.volumen} {tamano.unidadMedida})
+                    {momento.label}
                   </Label>
                 </div>
               ))}
             </div>
+            {selectedMomentos.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
+                {selectedMomentos.map((momento) => {
+                  const momentoLabel = momentosOptions.find(m => m.value === momento)?.label;
+                  return (
+                    <Badge key={momento} variant="outline">
+                      {momentoLabel}
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -360,16 +574,16 @@ export const CreateProductModal = ({ open, onOpenChange }: CreateProductModalPro
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={registerMutation.isPending}
+              disabled={createMutation.isPending}
             >
               Cancelar
             </Button>
             <Button 
               type="submit" 
-              disabled={registerMutation.isPending}
+              disabled={createMutation.isPending}
               className="bg-primary hover:bg-primary/90"
             >
-              {registerMutation.isPending ? (
+              {createMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Creando...
