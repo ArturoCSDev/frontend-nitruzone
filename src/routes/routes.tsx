@@ -1,3 +1,4 @@
+// src/routes/routes.tsx
 import { createBrowserRouter } from 'react-router-dom';
 import { lazy } from 'react';
 
@@ -26,6 +27,7 @@ const ListClients = lazy(() => import('../features/admin/pages/ListClients'));
 const ListProducts = lazy(() => import('../features/products/pages/ListProducts'));
 const ListSabores = lazy(() => import('../features/products/pages/ListSabores'));
 const ClienteSeguimiento = lazy(() => import('../features/seguimiento-fisico/pages/ClienteSeguimiento'));
+const PlanNutricionalDetails = lazy(() => import('../features/nutrition-plans/pages/PlanNutricionalDetails'));
 
 // Cliente
 const Club = lazy(() => import('../features/client/pages/Club'));
@@ -65,6 +67,7 @@ export const router = createBrowserRouter([
       { path: 'inventory', element: <ListProducts /> },
       { path: 'inventory/sabores', element: <ListSabores /> },
       { path: 'clients/:clienteId/seguimiento', element: <ClienteSeguimiento /> },
+      { path: 'clients/:clienteId/plan/:planId', element: <PlanNutricionalDetails /> },
     ],
   },
 

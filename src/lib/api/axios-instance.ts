@@ -10,7 +10,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 const createAxiosInstance = (): AxiosInstance => {
   const instance = axios.create({
     baseURL: BASE_URL,
-    timeout: 30000,
+    timeout: 90000,
     withCredentials: true, // ✅ Importante para CORS con cookies/auth
     headers: {
       'Content-Type': 'application/json',

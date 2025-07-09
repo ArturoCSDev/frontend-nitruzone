@@ -1,7 +1,7 @@
 // src/features/admin/pages/ListClients.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Users, UserCheck, UserX, Plus, MoreHorizontal, Edit, Trash2, Activity } from 'lucide-react';
+import { Search, Filter, Users, UserCheck, UserX, Plus, MoreHorizontal, Edit, Trash2, Activity, FileText, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,21 +17,45 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 import { useListClients } from '@/features/auth/hooks/useListClients';
+import { useGetActivePlanByCliente } from '@/features/nutrition-plans/hooks/useGetPlanByCliente';
+import { useCreatePlan } from '@/features/nutrition-plans/hooks/useCreatePlan';
 import { UserClientItem } from '@/features/auth/types/auth-api.types';
+import { CreatePlanNutricionalRequest } from '@/features/nutrition-plans/types/nutrition-plans-api.types';
 
 export default function ListClients() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [onlyActive, setOnlyActive] = useState<boolean | undefined>(undefined);
   const [onlyCompleteProfiles, setOnlyCompleteProfiles] = useState<boolean | undefined>(undefined);
+  
+  // Estados para el diálogo de plan
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<UserClientItem | null>(null);
 
   const { data, isLoading, error } = useListClients({
     search: search || undefined,
     onlyActive,
     onlyCompleteProfiles,
   });
+
+  // Hook para obtener plan activo del cliente seleccionado
+  const { 
+    data: activePlan, 
+    isLoading: isLoadingPlan, 
+    refetch: refetchPlan 
+  } = useGetActivePlanByCliente(selectedClient?.cliente.id || '');
+
+  // Hook para crear plan
+  const createPlan = useCreatePlan();
 
   const handleEdit = (client: UserClientItem) => {
     console.log('Editar cliente:', client);
@@ -46,6 +70,37 @@ export default function ListClients() {
   const handleViewSeguimiento = (client: UserClientItem) => {
     // Usar el ID de la tabla cliente, no del usuario
     navigate(`/panel/clients/${client.cliente.id}/seguimiento`);
+  };
+
+  const handleViewPlan = (client: UserClientItem) => {
+    setSelectedClient(client);
+    setPlanDialogOpen(true);
+  };
+
+  const handleCreatePlan = () => {
+    if (!selectedClient) return;
+
+    // Datos básicos para crear un plan estándar
+    const planData: CreatePlanNutricionalRequest = {
+      clienteId: selectedClient.cliente.id,
+      objetivo: 'MANTENIMIENTO', // Objetivo por defecto
+      duracionDias: 30,
+      fechaInicio: new Date().toISOString().split('T')[0],
+    };
+
+    createPlan.mutate(planData, {
+      onSuccess: () => {
+        refetchPlan(); // Refrescar el plan después de crear
+      }
+    });
+  };
+
+  const handleViewPlanDetails = () => {
+    if (activePlan && selectedClient) {
+      setPlanDialogOpen(false);
+      // Navegar a la página de detalles del plan
+      navigate(`/panel/clients/${selectedClient.cliente.id}/plan/${activePlan.id}`);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -268,6 +323,10 @@ export default function ListClients() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleViewPlan(client)}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Ver Plan
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleViewSeguimiento(client)}>
                               <Activity className="h-4 w-4 mr-2" />
                               Ver Seguimiento
@@ -304,6 +363,154 @@ export default function ListClients() {
           )}
         </CardContent>
       </Card>
+
+      {/* Diálogo de Plan Nutricional */}
+      <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Plan Nutricional - {selectedClient?.nombreCompleto}
+            </DialogTitle>
+            <DialogDescription>
+              Gestiona el plan nutricional del cliente
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Información del Cliente */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+              <div>
+                <p className="text-sm text-muted-foreground">Cliente</p>
+                <p className="font-medium">{selectedClient?.nombreCompleto}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">DNI</p>
+                <p className="font-medium">{selectedClient?.dni}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{selectedClient?.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Perfil</p>
+                <Badge variant={selectedClient?.cliente.hasCompleteProfile ? "default" : "secondary"}>
+                  {selectedClient?.cliente.hasCompleteProfile ? 'Completo' : 'Incompleto'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Estado del Plan */}
+            {isLoadingPlan ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mt-2">Verificando plan nutricional...</p>
+              </div>
+            ) : activePlan ? (
+              <div className="space-y-4">
+                <div className="p-4 border rounded-lg bg-green-50 border-green-200">
+                  <div className="flex items-center gap-2 text-green-800 mb-3">
+                    <FileText className="w-5 h-5" />
+                    <span className="font-medium">Plan Nutricional Activo</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-green-600 font-medium">Nombre del Plan</p>
+                      <p className="text-green-800">{activePlan.nombre}</p>
+                    </div>
+                    <div>
+                      <p className="text-green-600 font-medium">Objetivo</p>
+                      <p className="text-green-800">{activePlan.objetivo}</p>
+                    </div>
+                    <div>
+                      <p className="text-green-600 font-medium">Fecha de Inicio</p>
+                      <p className="text-green-800">
+                        {new Date(activePlan.fechaInicio).toLocaleDateString('es-ES')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-green-600 font-medium">Progreso</p>
+                      <p className="text-green-800">{activePlan.progreso}%</p>
+                    </div>
+                  </div>
+
+                  {activePlan.resumenRecomendaciones && (
+                    <div className="mt-3 pt-3 border-t border-green-200">
+                      <p className="text-green-600 font-medium mb-2">Recomendaciones</p>
+                      <div className="flex gap-4 text-sm">
+                        <span className="text-green-800">
+                          Total: {activePlan.resumenRecomendaciones.total}
+                        </span>
+                        <span className="text-green-800">
+                          Pendientes: {activePlan.resumenRecomendaciones.pendientes}
+                        </span>
+                        <span className="text-green-800">
+                          Aceptadas: {activePlan.resumenRecomendaciones.aceptadas}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleViewPlanDetails} className="flex-1">
+                    Ver Detalles del Plan
+                  </Button>
+                  <Button variant="outline" onClick={() => setPlanDialogOpen(false)}>
+                    Cerrar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 border rounded-lg bg-amber-50 border-amber-200">
+                  <div className="flex items-center gap-2 text-amber-800 mb-3">
+                    <FileText className="w-5 h-5" />
+                    <span className="font-medium">Sin Plan Nutricional</span>
+                  </div>
+                  
+                  <p className="text-amber-700 text-sm mb-4">
+                    Este cliente no tiene un plan nutricional activo. Puedes crear uno nuevo 
+                    con configuraciones básicas o personalizadas.
+                  </p>
+
+                  {!selectedClient?.cliente.hasCompleteProfile && (
+                    <div className="p-3 bg-amber-100 border border-amber-300 rounded text-sm text-amber-800 mb-4">
+                      <p className="font-medium">⚠️ Perfil Incompleto</p>
+                      <p>Para un plan más personalizado, considera completar el perfil del cliente 
+                         con información como edad, peso, altura y objetivos.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleCreatePlan} 
+                    disabled={createPlan.isPending}
+                    className="flex-1"
+                  >
+                    {createPlan.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creando Plan...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Crear Plan Básico
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={() => setPlanDialogOpen(false)}>
+                    Cerrar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
