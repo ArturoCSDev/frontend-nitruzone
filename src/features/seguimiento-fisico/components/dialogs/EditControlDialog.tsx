@@ -61,7 +61,7 @@ export const EditControlDialog: React.FC<EditControlDialogProps> = ({
     });
   };
 
-  const handleInputChange = (field: keyof UpdateControlFisicoRequest, value: any) => {
+  const handleInputChange = (field: keyof UpdateControlFisicoRequest, value: string | number | undefined | Record<string, unknown>) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

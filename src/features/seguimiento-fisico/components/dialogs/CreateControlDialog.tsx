@@ -46,7 +46,11 @@ export const CreateControlDialog: React.FC<CreateControlDialogProps> = ({
     });
   };
 
-  const handleInputChange = (field: keyof CreateControlFisicoRequest, value: any) => {
+  // El tipo de value refleja los posibles tipos de los campos de CreateControlFisicoRequest
+const handleInputChange = (
+  field: keyof CreateControlFisicoRequest,
+  value: string | number | undefined | Record<string, unknown>
+) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

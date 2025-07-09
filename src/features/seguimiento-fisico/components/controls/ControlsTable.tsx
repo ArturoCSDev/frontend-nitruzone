@@ -20,7 +20,7 @@ interface ControlsTableProps {
   onSelectAll: (checked: boolean) => void;
   onOpenDialog: (type: 'view' | 'edit' | 'delete', controlId: string) => void;
   isLoading: boolean;
-  error: any;
+  error: Error | null;
 }
 
 export const ControlsTable: React.FC<ControlsTableProps> = ({

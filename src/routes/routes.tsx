@@ -25,6 +25,7 @@ const ListAdmins = lazy(() => import('../features/admin/pages/ListAdmins'));
 const ListClients = lazy(() => import('../features/admin/pages/ListClients'));
 const ListProducts = lazy(() => import('../features/products/pages/ListProducts'));
 const ListSabores = lazy(() => import('../features/products/pages/ListSabores'));
+const ClienteSeguimiento = lazy(() => import('../features/seguimiento-fisico/pages/ClienteSeguimiento'));
 
 // Cliente
 const Club = lazy(() => import('../features/client/pages/Club'));
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
       { path: 'list-users/client', element: <ListClients /> },
       { path: 'inventory', element: <ListProducts /> },
       { path: 'inventory/sabores', element: <ListSabores /> },
+      { path: 'clients/:clienteId/seguimiento', element: <ClienteSeguimiento /> },
     ],
   },
 

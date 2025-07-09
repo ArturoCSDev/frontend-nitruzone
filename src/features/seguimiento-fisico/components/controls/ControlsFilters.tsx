@@ -19,7 +19,7 @@ export const ControlsFilters: React.FC<ControlsFiltersProps> = ({
   filters, 
   onFiltersChange 
 }) => {
-  const handleFilterChange = (key: keyof ListControlFisicoParams, value: any) => {
+  const handleFilterChange = (key: keyof ListControlFisicoParams, value: string | boolean) => {
     onFiltersChange({
       ...filters,
       [key]: value

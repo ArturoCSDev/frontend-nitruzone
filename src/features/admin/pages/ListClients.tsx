@@ -1,6 +1,7 @@
 // src/features/admin/pages/ListClients.tsx
 import { useState } from 'react';
-import { Search, Filter, Users, UserCheck, UserX, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Users, UserCheck, UserX, Plus, MoreHorizontal, Edit, Trash2, Activity } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ import { useListClients } from '@/features/auth/hooks/useListClients';
 import { UserClientItem } from '@/features/auth/types/auth-api.types';
 
 export default function ListClients() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [onlyActive, setOnlyActive] = useState<boolean | undefined>(undefined);
   const [onlyCompleteProfiles, setOnlyCompleteProfiles] = useState<boolean | undefined>(undefined);
@@ -39,6 +41,11 @@ export default function ListClients() {
   const handleDelete = (client: UserClientItem) => {
     console.log('Eliminar cliente:', client);
     // TODO: Implementar confirmación y eliminación
+  };
+
+  const handleViewSeguimiento = (client: UserClientItem) => {
+    // Usar el ID de la tabla cliente, no del usuario
+    navigate(`/panel/clients/${client.cliente.id}/seguimiento`);
   };
 
   const getInitials = (name: string) => {
@@ -98,7 +105,10 @@ export default function ListClients() {
             Gestiona y visualiza todos los clientes registrados
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => navigate('/panel/register-client')}
+        >
           <Plus className="w-4 h-4" />
           Nuevo Cliente
         </Button>
@@ -210,6 +220,7 @@ export default function ListClients() {
                           <div>
                             <p className="font-medium">{client.nombreCompleto}</p>
                             <p className="text-sm text-muted-foreground">DNI: {client.dni}</p>
+                            <p className="text-xs text-muted-foreground">ID Cliente: {client.cliente.id}</p>
                           </div>
                         </div>
                       </td>
@@ -257,6 +268,10 @@ export default function ListClients() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleViewSeguimiento(client)}>
+                              <Activity className="h-4 w-4 mr-2" />
+                              Ver Seguimiento
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEdit(client)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Editar

@@ -28,7 +28,7 @@ export const seguimientoFisicoApi = {
   async listControls(params?: ListControlFisicoParams): Promise<ListControlFisicoResponse> {
     const response = await api.get<ListControlFisicoResponse>(
       SEGUIMIENTO_FISICO_ENDPOINTS.LIST_CONTROLS, 
-      params
+      { params }
     );
     return response.data.data!;
   },
