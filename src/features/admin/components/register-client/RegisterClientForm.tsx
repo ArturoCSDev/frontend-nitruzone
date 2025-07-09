@@ -17,7 +17,7 @@ import { PreferencesStep } from './PreferencesStep';
 const STEPS = [
   { id: 1, title: 'Cuenta', description: 'Información básica' },
   { id: 2, title: 'Datos Físicos', description: 'Información corporal' },
-  { id: 3, title: 'Confirmación', description: 'Revisar y crear' },
+  { id: 3, title: 'Preferencias', description: 'Objetivos y preferencias' },
 ];
 
 export const RegisterClientForm = () => {
@@ -27,18 +27,28 @@ export const RegisterClientForm = () => {
   const form = useForm<RegisterClientFormData>({
     resolver: zodResolver(registerClientSchema),
     defaultValues: {
+      // Información básica
       email: '',
       dni: '',
       password: '',
       nombre: '',
       apellidoPaterno: '',
       apellidoMaterno: '',
+      
+      // Información física
       edad: undefined,
       peso: undefined,
       altura: undefined,
       genero: undefined,
       telefono: '',
-      notes: '',
+      
+      // Preferencias
+      nivelActividad: undefined,
+      preferenciasDieteticas: [],
+      alergenos: [],
+      objetivosFitness: [],
+      diasEntrenamiento: [],
+      horariosEntrenamiento: [],
     },
     mode: 'onBlur',
   });
@@ -57,7 +67,14 @@ export const RegisterClientForm = () => {
         fieldsToValidate = ['edad', 'peso', 'altura', 'genero', 'telefono'];
         break;
       case 3:
-        fieldsToValidate = ['notes'];
+        fieldsToValidate = [
+          'nivelActividad', 
+          'preferenciasDieteticas', 
+          'alergenos', 
+          'objetivosFitness', 
+          'diasEntrenamiento', 
+          'horariosEntrenamiento'
+        ];
         break;
     }
 
@@ -78,19 +95,40 @@ export const RegisterClientForm = () => {
   };
 
   const onSubmit = async (data: RegisterClientFormData) => {
-    // Filtrar campos undefined para el backend
+    // Filtrar y limpiar datos para el backend
     const cleanData = {
+      // Campos obligatorios
       email: data.email,
       dni: data.dni,
       password: data.password,
       nombre: data.nombre,
       apellidoPaterno: data.apellidoPaterno,
       apellidoMaterno: data.apellidoMaterno,
+      
+      // Campos opcionales - solo incluir si tienen valor
       ...(data.edad && { edad: data.edad }),
       ...(data.peso && { peso: data.peso }),
       ...(data.altura && { altura: data.altura }),
       ...(data.genero && { genero: data.genero }),
-      ...(data.telefono && { telefono: data.telefono }),
+      ...(data.telefono && data.telefono.trim() && { telefono: data.telefono }),
+      
+      // Preferencias - solo incluir si tienen valores
+      ...(data.nivelActividad && { nivelActividad: data.nivelActividad }),
+      ...(data.preferenciasDieteticas && data.preferenciasDieteticas.length > 0 && { 
+        preferenciasDieteticas: data.preferenciasDieteticas 
+      }),
+      ...(data.alergenos && data.alergenos.length > 0 && { 
+        alergenos: data.alergenos 
+      }),
+      ...(data.objetivosFitness && data.objetivosFitness.length > 0 && { 
+        objetivosFitness: data.objetivosFitness 
+      }),
+      ...(data.diasEntrenamiento && data.diasEntrenamiento.length > 0 && { 
+        diasEntrenamiento: data.diasEntrenamiento 
+      }),
+      ...(data.horariosEntrenamiento && data.horariosEntrenamiento.length > 0 && { 
+        horariosEntrenamiento: data.horariosEntrenamiento 
+      }),
     };
 
     registerMutation.mutate(cleanData);
@@ -113,7 +151,7 @@ export const RegisterClientForm = () => {
   const progress = (currentStep / STEPS.length) * 100;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <Card className="shadow-lg">
         <CardHeader className="space-y-4">
           {/* Header */}
