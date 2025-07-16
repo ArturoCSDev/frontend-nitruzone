@@ -1,7 +1,21 @@
 // src/features/seguimiento-fisico/pages/ClienteSeguimiento.tsx
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Activity, User, Calendar } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Plus, 
+  Activity, 
+  User, 
+  Calendar, 
+  Mail, 
+  Phone,
+  Scale,
+  Target,
+  TrendingUp,
+  AlertCircle,
+  Clock,
+  FileText
+} from 'lucide-react';
 
 // Shadcn UI Components
 import { Button } from '@/components/ui/button';
@@ -11,6 +25,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 
 // Components
 import { ControlsStats } from '../components/controls/ControlsStats';
@@ -30,7 +46,31 @@ import { useClient } from '@/features/auth/hooks/useClients';
 // Types
 import { ListControlFisicoParams } from '../types/seguimiento-fisico-api.types';
 
-const ClienteSeguimiento = () => {
+type DialogType = 'create' | 'edit' | 'view' | 'delete';
+
+interface DialogStates {
+  create: boolean;
+  edit: boolean;
+  view: boolean;
+  delete: boolean;
+}
+
+interface IMCStatus {
+  label: string;
+  variant: 'default' | 'secondary' | 'destructive';
+  color: string;
+}
+
+interface ClientMetric {
+  label: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  status?: string;
+  progress?: number;
+}
+
+const ClienteSeguimiento: React.FC = () => {
   const { clienteId } = useParams<{ clienteId: string }>();
   const navigate = useNavigate();
   
@@ -40,7 +80,7 @@ const ClienteSeguimiento = () => {
     realizadoPor: '',
   });
   const [selectedControls, setSelectedControls] = useState<string[]>([]);
-  const [dialogStates, setDialogStates] = useState({
+  const [dialogStates, setDialogStates] = useState<DialogStates>({
     create: false,
     edit: false,
     view: false,
@@ -65,21 +105,21 @@ const ClienteSeguimiento = () => {
   const summary = controlesData?.summary;
 
   // Handlers
-  const handleOpenDialog = (type: keyof typeof dialogStates, controlId?: string) => {
+  const handleOpenDialog = (type: DialogType, controlId?: string): void => {
     if (controlId) setCurrentControlId(controlId);
     setDialogStates(prev => ({ ...prev, [type]: true }));
   };
 
-  const handleCloseDialog = (type: keyof typeof dialogStates) => {
+  const handleCloseDialog = (type: DialogType): void => {
     setDialogStates(prev => ({ ...prev, [type]: false }));
     setCurrentControlId('');
   };
 
-  const handleFiltersChange = (newFilters: ListControlFisicoParams) => {
+  const handleFiltersChange = (newFilters: ListControlFisicoParams): void => {
     setFilters(newFilters);
   };
 
-  const handleSelectControl = (controlId: string, checked: boolean) => {
+  const handleSelectControl = (controlId: string, checked: boolean): void => {
     setSelectedControls(prev => 
       checked 
         ? [...prev, controlId]
@@ -87,19 +127,20 @@ const ClienteSeguimiento = () => {
     );
   };
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = (checked: boolean): void => {
     setSelectedControls(checked ? controles.map(c => c.id) : []);
   };
 
-  const handleControlSelect = (controlId: string) => {
+  const handleControlSelect = (controlId: string): void => {
     setSelectedControlForStats(controlId);
   };
 
-  const handleStatisticsDaysChange = (days: string) => {
+  const handleStatisticsDaysChange = (days: string): void => {
     setStatisticsDays(parseInt(days));
   };
 
-  const getInitials = (name: string) => {
+  // Utility functions
+  const getInitials = (name: string): string => {
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -108,20 +149,58 @@ const ClienteSeguimiento = () => {
       .slice(0, 2);
   };
 
-  const getIMCStatus = (imc: number | null) => {
-    if (!imc) return { label: 'N/A', variant: 'secondary' as const };
-    if (imc < 18.5) return { label: 'Bajo peso', variant: 'destructive' as const };
-    if (imc < 25) return { label: 'Normal', variant: 'default' as const };
-    if (imc < 30) return { label: 'Sobrepeso', variant: 'secondary' as const };
-    return { label: 'Obesidad', variant: 'destructive' as const };
+  const getIMCStatus = (imc: number | null): IMCStatus => {
+    if (!imc) return { label: 'N/A', variant: 'secondary', color: 'text-gray-500' };
+    if (imc < 18.5) return { label: 'Bajo peso', variant: 'destructive', color: 'text-red-600' };
+    if (imc < 25) return { label: 'Normal', variant: 'default', color: 'text-green-600' };
+    if (imc < 30) return { label: 'Sobrepeso', variant: 'secondary', color: 'text-yellow-600' };
+    return { label: 'Obesidad', variant: 'destructive', color: 'text-red-600' };
   };
 
-  const formatControlDate = (dateString: string) => {
+  const formatControlDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const getClientMetrics = (): ClientMetric[] => {
+    if (!cliente) return [];
+    
+    const imcStatus = getIMCStatus(cliente.cliente.imc);
+    
+    return [
+      {
+        label: 'Perfil',
+        value: cliente.cliente.hasCompleteProfile ? 'Completo' : 'Incompleto',
+        icon: User,
+        color: cliente.cliente.hasCompleteProfile ? 'text-green-600' : 'text-yellow-600',
+        status: cliente.cliente.hasCompleteProfile ? 'success' : 'warning',
+        progress: cliente.cliente.hasCompleteProfile ? 100 : 60
+      },
+      {
+        label: 'Peso Actual',
+        value: cliente.cliente.peso ? `${cliente.cliente.peso}kg` : 'N/A',
+        icon: Scale,
+        color: 'text-blue-600',
+        status: cliente.cliente.peso ? 'success' : 'empty'
+      },
+      {
+        label: 'IMC',
+        value: cliente.cliente.imc ? cliente.cliente.imc.toFixed(1) : 'N/A',
+        icon: Target,
+        color: imcStatus.color,
+        status: imcStatus.label
+      },
+      {
+        label: 'Controles',
+        value: controles.length.toString(),
+        icon: Activity,
+        color: 'text-purple-600',
+        status: controles.length > 0 ? 'active' : 'inactive'
+      }
+    ];
   };
 
   // Loading state
@@ -137,7 +216,7 @@ const ClienteSeguimiento = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
       </div>
@@ -148,9 +227,15 @@ const ClienteSeguimiento = () => {
   if (!cliente || !clienteId) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center py-12">
-          <p className="text-destructive">Cliente no encontrado</p>
+        <Alert variant="destructive" className="max-w-md mx-auto">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Cliente no encontrado. Verifica que el ID sea correcto.
+          </AlertDescription>
+        </Alert>
+        <div className="text-center mt-6">
           <Button variant="outline" onClick={() => navigate('/panel/list-users/client')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Volver a la lista
           </Button>
         </div>
@@ -158,13 +243,13 @@ const ClienteSeguimiento = () => {
     );
   }
 
-  const imcStatus = getIMCStatus(cliente.cliente.imc);
+  const clientMetrics = getClientMetrics();
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-6">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -174,126 +259,115 @@ const ClienteSeguimiento = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver
           </Button>
+          
           <div className="flex items-start gap-4">
-            <Avatar className="w-16 h-16">
-              <AvatarFallback className="text-lg">
-                {getInitials(cliente.nombreCompleto)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold">{cliente.nombreCompleto}</h1>
-              <p className="text-muted-foreground">Seguimiento físico y controles</p>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-1">
-                  <User className="w-4 h-4" />
-                  DNI: {cliente.dni}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {cliente.cliente.edad ? `${cliente.cliente.edad} años` : 'Edad no registrada'}
-                </span>
-                <Badge variant={cliente.active ? "default" : "secondary"}>
+            <div className="relative">
+              <Avatar className="w-20 h-20">
+                <AvatarFallback className="text-xl font-semibold">
+                  {getInitials(cliente.nombreCompleto)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 -right-1">
+                <Badge variant={cliente.active ? "default" : "secondary"} className="text-xs">
                   {cliente.active ? 'Activo' : 'Inactivo'}
                 </Badge>
               </div>
             </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold">{cliente.nombreCompleto}</h1>
+              <p className="text-muted-foreground">Seguimiento físico y controles</p>
+              
+              <div className="flex items-center gap-6 text-sm">
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span>DNI: {cliente.dni}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>{cliente.cliente.edad ? `${cliente.cliente.edad} años` : 'Edad no registrada'}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Mail className="w-4 h-4" />
+                  <span>{cliente.email}</span>
+                </div>
+                {cliente.cliente.telefono && (
+                  <div className="flex items-center gap-1">
+                    <Phone className="w-4 h-4" />
+                    <span>{cliente.cliente.telefono}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-        <Button onClick={() => handleOpenDialog('create')}>
-          <Plus className="w-4 h-4 mr-2" />
+        
+        <Button onClick={() => handleOpenDialog('create')} className="gap-2">
+          <Plus className="w-4 h-4" />
           Nuevo Control
         </Button>
       </div>
 
-      {/* Cliente Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Perfil</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <Badge variant={cliente.cliente.hasCompleteProfile ? "default" : "secondary"}>
-                {cliente.cliente.hasCompleteProfile ? 'Completo' : 'Incompleto'}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Estado del perfil
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Peso</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {cliente.cliente.peso ? `${cliente.cliente.peso}kg` : 'N/A'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Peso actual
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">IMC</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <Badge variant={imcStatus.variant}>
-                {cliente.cliente.imc ? cliente.cliente.imc.toFixed(1) : 'N/A'}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {imcStatus.label}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contacto</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm font-bold">{cliente.email}</div>
-            <p className="text-xs text-muted-foreground">
-              {cliente.cliente.telefono || 'Sin teléfono'}
-            </p>
-          </CardContent>
-        </Card>
+      {/* Client Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {clientMetrics.map((metric, index) => (
+          <Card key={index} className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{metric.label}</CardTitle>
+              <metric.icon className={`h-4 w-4 ${metric.color}`} />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-2xl font-bold">{metric.value}</div>
+              {metric.status && (
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="text-xs">
+                    {metric.status}
+                  </Badge>
+                  {metric.progress && (
+                    <span className="text-xs text-muted-foreground">
+                      {metric.progress}%
+                    </span>
+                  )}
+                </div>
+              )}
+              {metric.progress && (
+                <Progress value={metric.progress} className="h-1" />
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="controls" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="controls">Controles</TabsTrigger>
-          <TabsTrigger value="analytics">Análisis</TabsTrigger>
-          <TabsTrigger value="charts">Gráficas</TabsTrigger>
+          <TabsTrigger value="controls" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Controles
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Análisis
+          </TabsTrigger>
+          <TabsTrigger value="charts" className="gap-2">
+            <Activity className="w-4 h-4" />
+            Gráficas
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab: Controles */}
         <TabsContent value="controls" className="space-y-4">
-          {/* Stats Cards */}
           <ControlsStats 
             controles={controles}
             summary={summary}
             isLoading={isLoadingControles}
           />
 
-          {/* Filters */}
           <ControlsFilters 
             filters={filters}
             onFiltersChange={handleFiltersChange}
           />
 
-          {/* Table */}
           <ControlsTable 
             controles={controles}
             selectedControls={selectedControls}
@@ -343,6 +417,10 @@ const ClienteSeguimiento = () => {
                 </Select>
               </div>
             </div>
+            <Badge variant="outline" className="gap-2">
+              <Clock className="w-3 h-3" />
+              Última actualización: {statsData ? 'Ahora' : 'Cargando...'}
+            </Badge>
           </div>
 
           {statsData && (
@@ -395,15 +473,26 @@ const ClienteSeguimiento = () => {
                 </Select>
               </div>
             </div>
+            <Badge variant="outline" className="gap-2">
+              <Activity className="w-3 h-3" />
+              {controles.length} controles disponibles
+            </Badge>
           </div>
 
-          {statsData?.chartData && (
+          {statsData?.chartData ? (
             <ControlFisicoCharts
               chartData={statsData.chartData}
               trends={statsData.trends}
               statistics={statsData.statistics}
               isLoading={isLoadingStats}
             />
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No hay datos suficientes para mostrar gráficas. Se necesitan al menos 2 controles para generar visualizaciones.
+              </AlertDescription>
+            </Alert>
           )}
         </TabsContent>
       </Tabs>
