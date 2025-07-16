@@ -1,4 +1,4 @@
-// src/routes/routes.tsx
+// src/routes/routes.tsx - Actualización para incluir la nueva página
 import { createBrowserRouter } from 'react-router-dom';
 import { lazy } from 'react';
 
@@ -28,6 +28,8 @@ const ListProducts = lazy(() => import('../features/products/pages/ListProducts'
 const ListSabores = lazy(() => import('../features/products/pages/ListSabores'));
 const ClienteSeguimiento = lazy(() => import('../features/seguimiento-fisico/pages/ClienteSeguimiento'));
 const PlanNutricionalDetails = lazy(() => import('../features/nutrition-plans/pages/PlanNutricionalDetails'));
+const GenerarRecomendacionesMCP = lazy(() => import('../features/nutrition-plans/pages/GenerarRecomendacionesMCP'));
+const AsesoriaCompleta = lazy(() => import('../features/nutrition-plans/pages/AsesoriaCompleta'));
 
 // Cliente
 const Club = lazy(() => import('../features/client/pages/Club'));
@@ -68,6 +70,8 @@ export const router = createBrowserRouter([
       { path: 'inventory/sabores', element: <ListSabores /> },
       { path: 'clients/:clienteId/seguimiento', element: <ClienteSeguimiento /> },
       { path: 'clients/:clienteId/plan/:planId', element: <PlanNutricionalDetails /> },
+      { path: 'clients/:clienteId/recomendaciones-ia', element: <GenerarRecomendacionesMCP /> },
+      { path: 'clients/:clienteId/asesoria-completa', element: <AsesoriaCompleta /> },
     ],
   },
 

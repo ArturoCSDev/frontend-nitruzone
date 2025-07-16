@@ -1,7 +1,10 @@
 // src/features/admin/pages/ListClients.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Users, UserCheck, UserX, Plus, MoreHorizontal, Edit, Trash2, Activity, FileText, Loader2 } from 'lucide-react';
+import { 
+  Search, Filter, Users, UserCheck, UserX, Plus, MoreHorizontal, Edit, Trash2, 
+  Activity, FileText, Loader2, Bot, FileBarChart 
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +78,16 @@ export default function ListClients() {
   const handleViewPlan = (client: UserClientItem) => {
     setSelectedClient(client);
     setPlanDialogOpen(true);
+  };
+
+  // ✅ NUEVA FUNCIÓN: Navegar a Asesoría Completa
+  const handleViewAsesoria = (client: UserClientItem) => {
+    navigate(`/panel/clients/${client.cliente.id}/asesoria-completa`);
+  };
+
+  // ✅ NUEVA FUNCIÓN: Navegar a Recomendaciones IA
+  const handleGenerateRecommendations = (client: UserClientItem) => {
+    navigate(`/panel/clients/${client.cliente.id}/recomendaciones-ia`);
   };
 
   const handleCreatePlan = () => {
@@ -320,17 +333,38 @@ export default function ListClients() {
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
+                          {/* ✅ MENÚ ACTUALIZADO CON NUEVAS OPCIONES */}
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            
+                            {/* Asesoría Completa - Nueva opción principal */}
+                            <DropdownMenuItem onClick={() => handleViewAsesoria(client)}>
+                              <FileBarChart className="h-4 w-4 mr-2" />
+                              Asesoría Completa
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator />
+                            
+                            {/* Opciones existentes */}
                             <DropdownMenuItem onClick={() => handleViewPlan(client)}>
                               <FileText className="h-4 w-4 mr-2" />
                               Ver Plan
                             </DropdownMenuItem>
+                            
+                            {/* Recomendaciones IA - Nueva opción */}
+                            <DropdownMenuItem onClick={() => handleGenerateRecommendations(client)}>
+                              <Bot className="h-4 w-4 mr-2" />
+                              Generar Recomendaciones IA
+                            </DropdownMenuItem>
+                            
                             <DropdownMenuItem onClick={() => handleViewSeguimiento(client)}>
                               <Activity className="h-4 w-4 mr-2" />
                               Ver Seguimiento
                             </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator />
+                            
                             <DropdownMenuItem onClick={() => handleEdit(client)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
@@ -364,7 +398,7 @@ export default function ListClients() {
         </CardContent>
       </Card>
 
-      {/* Diálogo de Plan Nutricional */}
+      {/* Diálogo de Plan Nutricional - Sin cambios */}
       <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
