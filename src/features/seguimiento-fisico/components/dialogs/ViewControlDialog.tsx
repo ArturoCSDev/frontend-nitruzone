@@ -284,31 +284,24 @@ export const ViewControlDialog: React.FC<ViewControlDialogProps> = ({
             </CardContent>
           </Card>
 
-          {/* Alertas y Validaciones */}
-          {(controlFisico.needsFollowUp || !controlFisico.isValidNivelEnergia || !controlFisico.isValidEstadoAnimo) && (
+          {/* Medidas Adicionales (si existen) */}
+          {controlFisico.medidasAdicionales && Object.keys(controlFisico.medidasAdicionales).length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-amber-600">Alertas</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  Medidas Adicionales
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {controlFisico.needsFollowUp && (
-                  <div className="flex items-center gap-2 text-amber-600">
-                    <Clock className="w-4 h-4" />
-                    <p className="text-sm">Requiere seguimiento - próxima cita vencida</p>
-                  </div>
-                )}
-                {!controlFisico.isValidNivelEnergia && (
-                  <div className="flex items-center gap-2 text-red-600">
-                    <Activity className="w-4 h-4" />
-                    <p className="text-sm">Nivel de energía fuera del rango válido</p>
-                  </div>
-                )}
-                {!controlFisico.isValidEstadoAnimo && (
-                  <div className="flex items-center gap-2 text-red-600">
-                    <Heart className="w-4 h-4" />
-                    <p className="text-sm">Estado de ánimo fuera del rango válido</p>
-                  </div>
-                )}
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {Object.entries(controlFisico.medidasAdicionales).map(([key, value]) => (
+                    <div key={key} className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">{key}</p>
+                      <p className="font-medium">{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
