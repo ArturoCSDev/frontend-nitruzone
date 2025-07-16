@@ -27,10 +27,34 @@ export const nutritionPlansApi = {
   },
 
   async getPlan(planId: string, params?: GetPlanNutricionalParams): Promise<GetPlanNutricionalResponse> {
+    // ✅ PREPARAR params explícitamente para evitar problemas
+    const queryParams: Record<string, string> = {};
+    
+    if (params?.includeRecomendaciones !== undefined) {
+      queryParams.includeRecomendaciones = params.includeRecomendaciones.toString();
+    }
+    if (params?.includeProductos !== undefined) {
+      queryParams.includeProductos = params.includeProductos.toString();
+    }
+    if (params?.includeCliente !== undefined) {
+      queryParams.includeCliente = params.includeCliente.toString();
+    }
+    if (params?.onlyPendingRecomendaciones !== undefined) {
+      queryParams.onlyPendingRecomendaciones = params.onlyPendingRecomendaciones.toString();
+    }
+
+    console.log('🚀 Enviando request a getPlan:', {
+      planId,
+      queryParams,
+      url: NUTRITION_PLANS_ENDPOINTS.GET_PLAN(planId)
+    });
+
     const response = await api.get<GetPlanNutricionalResponse>(
       NUTRITION_PLANS_ENDPOINTS.GET_PLAN(planId), 
-      { params }
+      queryParams
     );
+    
+    console.log('✅ Respuesta de getPlan:', response.data);
     return response.data.data!;
   },
 
