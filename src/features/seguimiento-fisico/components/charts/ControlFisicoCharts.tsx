@@ -87,6 +87,18 @@ const ControlFisicoCharts: React.FC<ControlFisicoChartsProps> = ({
   statistics,
   isLoading
 }) => {
+  // ✅ AGREGAR ESTOS CONSOLE.LOG AL INICIO
+  console.log('🔍 DEBUG - ControlFisicoCharts recibió:', {
+    chartData,
+    trends,
+    statistics,
+    isLoading,
+    hasChartData: !!chartData,
+    chartDataKeys: chartData ? Object.keys(chartData) : null,
+    weightChartLength: chartData?.weightChart?.length || 0,
+    bodyCompositionLength: chartData?.bodyCompositionChart?.length || 0
+  });
+
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       month: 'short',
@@ -95,6 +107,7 @@ const ControlFisicoCharts: React.FC<ControlFisicoChartsProps> = ({
   };
 
   if (isLoading) {
+    console.log('🔍 DEBUG - ControlFisicoCharts está cargando');
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
@@ -109,6 +122,7 @@ const ControlFisicoCharts: React.FC<ControlFisicoChartsProps> = ({
 
   // Si no hay datos de gráficas, mostrar alerta
   if (!chartData) {
+    console.log('🔍 DEBUG - No hay chartData, mostrando mensaje de error');
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
@@ -118,6 +132,8 @@ const ControlFisicoCharts: React.FC<ControlFisicoChartsProps> = ({
       </Alert>
     );
   }
+
+  console.log('🔍 DEBUG - ControlFisicoCharts va a procesar datos');
 
   // Procesar datos de manera segura
   const processedWeightData = chartData.weightChart?.map(item => ({

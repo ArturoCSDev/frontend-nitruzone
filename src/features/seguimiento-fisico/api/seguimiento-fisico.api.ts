@@ -40,49 +40,6 @@ export const seguimientoFisicoApi = {
     );
     return response.data.data!;
   },
-  
-  // Nueva función para obtener control con parámetros de estadísticas
-  async getControlWithParams(
-    controlId: string, 
-    params: GetControlFisicoParams
-  ): Promise<GetControlFisicoResponse> {
-    const response = await api.get<GetControlFisicoResponse>(
-      SEGUIMIENTO_FISICO_ENDPOINTS.GET_CONTROL(controlId),
-      { params }
-    );
-    return response.data.data!;
-  },
-  
-  // Función helper para obtener control con estadísticas completas
-  async getControlWithStatistics(
-    controlId: string,
-    options: {
-      includeStatistics?: boolean;
-      includeTrends?: boolean;
-      includeComparisons?: boolean;
-      statisticsDays?: number;
-    } = {}
-  ): Promise<GetControlFisicoResponse> {
-    const {
-      includeStatistics = true,
-      includeTrends = true,
-      includeComparisons = true,
-      statisticsDays = 90
-    } = options;
-  
-    const response = await api.get<GetControlFisicoResponse>(
-      SEGUIMIENTO_FISICO_ENDPOINTS.GET_CONTROL(controlId),
-      { 
-        params: { 
-          includeStatistics,
-          includeTrends,
-          includeComparisons,
-          statisticsDays 
-        } 
-      }
-    );
-    return response.data.data!;
-  },
 
   async updateControl(controlId: string, data: UpdateControlFisicoRequest): Promise<UpdateControlFisicoResponse> {
     const response = await api.put<UpdateControlFisicoResponse>(
@@ -152,6 +109,55 @@ export const seguimientoFisicoApi = {
     const response = await api.get<ListControlFisicoResponse>(
       SEGUIMIENTO_FISICO_ENDPOINTS.LIST_CONTROLS, 
       { clienteId, onlyWithSubjectiveEvaluation: true }
+    );
+    return response.data.data!;
+  },
+
+  async getControlWithParams(
+    controlId: string, 
+    params: GetControlFisicoParams
+  ): Promise<GetControlFisicoResponse> {
+    const response = await api.get<GetControlFisicoResponse>(
+      SEGUIMIENTO_FISICO_ENDPOINTS.GET_CONTROL(controlId),
+      { 
+        params: {
+          includeStatistics: params.includeStatistics,
+          includeTrends: params.includeTrends,
+          includeComparisons: params.includeComparisons,
+          statisticsDays: params.statisticsDays
+        }
+      }
+    );
+    return response.data.data!;
+  },
+
+  // Actualizar este método existente
+  async getControlWithStatistics(
+    controlId: string,
+    options: {
+      includeStatistics?: boolean;
+      includeTrends?: boolean;
+      includeComparisons?: boolean;
+      statisticsDays?: number;
+    } = {}
+  ): Promise<GetControlFisicoResponse> {
+    const {
+      includeStatistics = true,
+      includeTrends = true,
+      includeComparisons = true,
+      statisticsDays = 90
+    } = options;
+
+    const response = await api.get<GetControlFisicoResponse>(
+      SEGUIMIENTO_FISICO_ENDPOINTS.GET_CONTROL(controlId),
+      { 
+        params: { 
+          includeStatistics,
+          includeTrends,
+          includeComparisons,
+          statisticsDays 
+        } 
+      }
     );
     return response.data.data!;
   },

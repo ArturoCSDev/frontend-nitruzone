@@ -40,7 +40,8 @@ import ControlFisicoCharts from '../components/charts/ControlFisicoCharts';
 import ControlStatisticsPanel from '../components/statistics/ControlStatisticsPanel';
 
 // Hooks
-import { useControlsByCliente, useControlFisicoDashboard } from '../hooks/useSeguimientoFisico';
+import { useControlsByCliente } from '../hooks/useSeguimientoFisico';
+import { useControlFisicoDashboard } from '../hooks/useControlFisicoDashboard';
 import { useClient } from '@/features/auth/hooks/useClients';
 
 // Types
@@ -105,10 +106,16 @@ const ClienteSeguimiento: React.FC = () => {
     }
   }, [lastControlId, selectedControlForStats]);
 
-  const { data: statsData, isLoading: isLoadingStats } = useControlFisicoDashboard(
-    selectedControlForStats || lastControlId, 
-    statisticsDays
-  );
+// La línea donde se usa el hook debe quedar así:
+const { data: statsData, isLoading: isLoadingStats } = useControlFisicoDashboard(
+  selectedControlForStats || lastControlId, 
+  statisticsDays
+);
+
+// Y agregar este console.log justo después:
+console.log('🔍 DEBUG - ClienteSeguimiento statsData:', statsData);
+console.log('🔍 DEBUG - ClienteSeguimiento chartData:', statsData?.chartData);
+console.log('🔍 DEBUG - ClienteSeguimiento isLoading:', isLoadingStats);
 
   const summary = controlesData?.summary;
 
