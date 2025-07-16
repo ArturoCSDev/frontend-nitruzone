@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Components
 import { ControlsStats } from '../components/controls/ControlsStats';
@@ -18,9 +20,11 @@ import { CreateControlDialog } from '../components/dialogs/CreateControlDialog';
 import { EditControlDialog } from '../components/dialogs/EditControlDialog';
 import { ViewControlDialog } from '../components/dialogs/ViewControlDialog';
 import { DeleteControlDialog } from '../components/dialogs/DeleteControlDialog';
+import ControlFisicoCharts from '../components/charts/ControlFisicoCharts';
+import ControlStatisticsPanel from '../components/statistics/ControlStatisticsPanel';
 
 // Hooks
-import { useControlsByCliente } from '../hooks/useSeguimientoFisico';
+import { useControlsByCliente, useControlFisicoDashboard } from '../hooks/useSeguimientoFisico';
 import { useClient } from '@/features/auth/hooks/useClients';
 
 // Types
@@ -43,10 +47,19 @@ const ClienteSeguimiento = () => {
     delete: false,
   });
   const [currentControlId, setCurrentControlId] = useState<string>('');
+  const [statisticsDays, setStatisticsDays] = useState<number>(90);
+  const [selectedControlForStats, setSelectedControlForStats] = useState<string>('');
 
   // Hooks
   const { data: cliente, isLoading: isLoadingCliente } = useClient(clienteId || '');
   const { data: controlesData, isLoading: isLoadingControles, error } = useControlsByCliente(clienteId || '', filters);
+  
+  // Hook para obtener estadísticas del último control
+  const lastControlId = controlesData?.controles?.[0]?.id || '';
+  const { data: statsData, isLoading: isLoadingStats } = useControlFisicoDashboard(
+    selectedControlForStats || lastControlId, 
+    statisticsDays
+  );
 
   const controles = controlesData?.controles || [];
   const summary = controlesData?.summary;
@@ -78,6 +91,14 @@ const ClienteSeguimiento = () => {
     setSelectedControls(checked ? controles.map(c => c.id) : []);
   };
 
+  const handleControlSelect = (controlId: string) => {
+    setSelectedControlForStats(controlId);
+  };
+
+  const handleStatisticsDaysChange = (days: string) => {
+    setStatisticsDays(parseInt(days));
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -93,6 +114,14 @@ const ClienteSeguimiento = () => {
     if (imc < 25) return { label: 'Normal', variant: 'default' as const };
     if (imc < 30) return { label: 'Sobrepeso', variant: 'secondary' as const };
     return { label: 'Obesidad', variant: 'destructive' as const };
+  };
+
+  const formatControlDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   // Loading state
@@ -241,29 +270,143 @@ const ClienteSeguimiento = () => {
         </Card>
       </div>
 
-      {/* Stats Cards */}
-      <ControlsStats 
-        controles={controles}
-        summary={summary}
-        isLoading={isLoadingControles}
-      />
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="controls" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="controls">Controles</TabsTrigger>
+          <TabsTrigger value="analytics">Análisis</TabsTrigger>
+          <TabsTrigger value="charts">Gráficas</TabsTrigger>
+        </TabsList>
 
-      {/* Filters */}
-      <ControlsFilters 
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-      />
+        {/* Tab: Controles */}
+        <TabsContent value="controls" className="space-y-4">
+          {/* Stats Cards */}
+          <ControlsStats 
+            controles={controles}
+            summary={summary}
+            isLoading={isLoadingControles}
+          />
 
-      {/* Table */}
-      <ControlsTable 
-        controles={controles}
-        selectedControls={selectedControls}
-        onSelectControl={handleSelectControl}
-        onSelectAll={handleSelectAll}
-        onOpenDialog={handleOpenDialog}
-        isLoading={isLoadingControles}
-        error={error}
-      />
+          {/* Filters */}
+          <ControlsFilters 
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+          />
+
+          {/* Table */}
+          <ControlsTable 
+            controles={controles}
+            selectedControls={selectedControls}
+            onSelectControl={handleSelectControl}
+            onSelectAll={handleSelectAll}
+            onOpenDialog={handleOpenDialog}
+            isLoading={isLoadingControles}
+            error={error}
+          />
+        </TabsContent>
+
+        {/* Tab: Análisis */}
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Control a analizar:</label>
+                <Select 
+                  value={selectedControlForStats || lastControlId} 
+                  onValueChange={handleControlSelect}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Seleccionar control" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {controles.map((control) => (
+                      <SelectItem key={control.id} value={control.id}>
+                        {formatControlDate(control.fechaControl)} - {control.peso ? `${control.peso}kg` : 'Sin peso'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Período:</label>
+                <Select value={statisticsDays.toString()} onValueChange={handleStatisticsDaysChange}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 días</SelectItem>
+                    <SelectItem value="60">60 días</SelectItem>
+                    <SelectItem value="90">90 días</SelectItem>
+                    <SelectItem value="180">6 meses</SelectItem>
+                    <SelectItem value="365">1 año</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {statsData && (
+            <ControlStatisticsPanel
+              statistics={statsData.statistics!}
+              trends={statsData.trends}
+              progressSummary={statsData.progressSummary}
+              insights={statsData.insights}
+              correlations={statsData.correlations}
+              isLoading={isLoadingStats}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab: Gráficas */}
+        <TabsContent value="charts" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Control base:</label>
+                <Select 
+                  value={selectedControlForStats || lastControlId} 
+                  onValueChange={handleControlSelect}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Seleccionar control" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {controles.map((control) => (
+                      <SelectItem key={control.id} value={control.id}>
+                        {formatControlDate(control.fechaControl)} - {control.peso ? `${control.peso}kg` : 'Sin peso'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Período:</label>
+                <Select value={statisticsDays.toString()} onValueChange={handleStatisticsDaysChange}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 días</SelectItem>
+                    <SelectItem value="60">60 días</SelectItem>
+                    <SelectItem value="90">90 días</SelectItem>
+                    <SelectItem value="180">6 meses</SelectItem>
+                    <SelectItem value="365">1 año</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {statsData?.chartData && (
+            <ControlFisicoCharts
+              chartData={statsData.chartData}
+              trends={statsData.trends}
+              statistics={statsData.statistics}
+              isLoading={isLoadingStats}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       <CreateControlDialog 

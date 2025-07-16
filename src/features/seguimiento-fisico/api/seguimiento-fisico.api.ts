@@ -1,6 +1,7 @@
 // src/features/seguimiento-fisico/api/seguimiento-fisico.api.ts
 import { api } from '../../../lib/api/axios-instance';
 import { SEGUIMIENTO_FISICO_ENDPOINTS } from '../../../lib/api/endpoints/seguimiento-fisico.endpoints';
+import { GetControlFisicoParams } from '../hooks/useSeguimientoFisico';
 import { 
   CreateControlFisicoRequest,
   CreateControlFisicoResponse,
@@ -36,6 +37,49 @@ export const seguimientoFisicoApi = {
   async getControl(controlId: string): Promise<GetControlFisicoResponse> {
     const response = await api.get<GetControlFisicoResponse>(
       SEGUIMIENTO_FISICO_ENDPOINTS.GET_CONTROL(controlId)
+    );
+    return response.data.data!;
+  },
+  
+  // Nueva función para obtener control con parámetros de estadísticas
+  async getControlWithParams(
+    controlId: string, 
+    params: GetControlFisicoParams
+  ): Promise<GetControlFisicoResponse> {
+    const response = await api.get<GetControlFisicoResponse>(
+      SEGUIMIENTO_FISICO_ENDPOINTS.GET_CONTROL(controlId),
+      { params }
+    );
+    return response.data.data!;
+  },
+  
+  // Función helper para obtener control con estadísticas completas
+  async getControlWithStatistics(
+    controlId: string,
+    options: {
+      includeStatistics?: boolean;
+      includeTrends?: boolean;
+      includeComparisons?: boolean;
+      statisticsDays?: number;
+    } = {}
+  ): Promise<GetControlFisicoResponse> {
+    const {
+      includeStatistics = true,
+      includeTrends = true,
+      includeComparisons = true,
+      statisticsDays = 90
+    } = options;
+  
+    const response = await api.get<GetControlFisicoResponse>(
+      SEGUIMIENTO_FISICO_ENDPOINTS.GET_CONTROL(controlId),
+      { 
+        params: { 
+          includeStatistics,
+          includeTrends,
+          includeComparisons,
+          statisticsDays 
+        } 
+      }
     );
     return response.data.data!;
   },

@@ -80,16 +80,6 @@ export interface GetAsesoriaCompletaParams {
     momentoDelDia?: string; // "MANANA", "PRE_ENTRENAMIENTO", etc.
   }
   
-  export interface CreateRecommendationMCPResponse {
-    recomendaciones: RecomendacionGenerada[];
-    razonamientoGeneral: string;
-    metadatos: {
-      processingTime: number;
-      totalProcessingTime?: number;
-      usedMCP: boolean;
-    };
-  }
-  
   export interface MCPHealthResponse {
     mcpServer: {
       status: 'healthy' | 'unhealthy';
@@ -375,4 +365,106 @@ export interface GetAsesoriaCompletaParams {
     timingModificado: string | null;
     fechaCreacion: string;
     fechaRespuesta: string | null;
+    
+    // ✅ Nuevos campos mejorados del backend
+    beneficiosEspecificos?: string[];
+    contraindicaciones?: string;
+    valorNutricional?: {
+      proteinaPorPorcion: number;
+      caloriasPorPorcion: number;
+      costoPorPorcion: string;
+      densidadProteica: number | string;
+    };
+    
+    // ✅ Información completa del producto
+    producto?: {
+      id: string;
+      nombre: string;
+      descripcion: string | null;
+      precio: number;
+      proteina: number | null;
+      calorias: number | null;
+      carbohidratos: number | null;
+      grasas: number | null;
+      fibra: number | null;
+      azucar: number | null;
+      volumen: number | null;
+      categoria: string | null;
+      sabor: string | null;
+      tamano: string | null;
+      ingredientes: string[];
+      etiquetas: string[];
+      momentosRecomendados: string[];
+      urlImagen: string | null;
+      
+      // ✅ Información calculada del backend
+      valorNutricional?: {
+        macronutrientes: {
+          proteina: { valor: number; porcentaje: number; categoria: string };
+          carbohidratos: { valor: number; porcentaje: number; categoria: string };
+          grasas: { valor: number; porcentaje: number; categoria: string };
+        };
+        densidadProteica: number;
+        caloriasPorGramo: number;
+        puntuacionNutricional: {
+          puntuacion: number;
+          categoria: string;
+          descripcion: string;
+        };
+        calidadProteica: string;
+        perfilCalorico: string;
+      };
+      
+      recomendadoPara?: Array<{
+        momento: string;
+        razon: string;
+        horario: string;
+        prioridad: string;
+      }>;
+      
+      beneficios?: Array<{
+        categoria: string;
+        beneficio: string;
+        evidencia: string;
+        impacto: string;
+      }>;
+      
+      fechaCreacion: string;
+      fechaActualizacion: string;
+    };
+  }
+  
+  export interface CreateRecommendationMCPResponse {
+    recomendaciones: RecomendacionGenerada[];
+    razonamientoGeneral: string;
+    
+    // ✅ Campos adicionales del backend mejorado
+    recomendacionesAdicionales?: string[];
+    alertas?: string[];
+    
+    metadatos: {
+      processingTime: number;
+      totalProcessingTime?: number;
+      usedMCP: boolean;
+      fallback?: boolean;
+      sistemaInteligente?: boolean;
+      usedClaude?: boolean;
+      
+      // ✅ Metadatos adicionales
+      recomendacionesOriginales?: number;
+      recomendacionesValidas?: number;
+      recomendacionesDescartadas?: number;
+      productosValidados?: number;
+      productosAnalizados?: number;
+      contextoAnalizado?: string;
+      clienteAnalizado?: boolean;
+      productosDisponibles?: number;
+      
+      // ✅ Información del producto fallback si se usó
+      productoFallback?: {
+        id: string;
+        nombre: string;
+        razonSeleccion: string;
+      };
+    };
   }

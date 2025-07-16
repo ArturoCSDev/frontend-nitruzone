@@ -1,5 +1,7 @@
 // src/features/seguimiento-fisico/types/seguimiento-fisico-api.types.ts
 
+import { ControlFisicoDetallado } from "@/features/nutrition-plans/types/asesoria-completa-api.types";
+
 // =============================================
 // CREAR CONTROL FÍSICO
 // =============================================
@@ -102,43 +104,147 @@ export interface CreateControlFisicoRequest {
   // OBTENER CONTROL FÍSICO ESPECÍFICO
   // =============================================
   
+  export interface GetControlFisicoParams {
+    includeStatistics?: boolean;
+    includeTrends?: boolean;
+    includeComparisons?: boolean;
+    statisticsDays?: number;
+  }
+  
   export interface GetControlFisicoResponse {
     controlFisico: ControlFisicoDetallado;
     cliente: ClienteControlInfo | null;
+    
+    // Nuevos campos opcionales para estadísticas
+    statistics?: ControlFisicoStatistics;
+    progressSummary?: PhysicalProgressSummary;
+    trends?: TrendsAnalysis;
+    goals?: GoalProgress[];
+    correlations?: CorrelationAnalysis;
+    chartData?: ChartData;
+    insights?: InsightsData;
   }
   
-  export interface ControlFisicoDetallado {
-    id: string;
-    clienteId: string;
-    planId: string | null;
-    fechaControl: string;
-    peso: number | null;
-    grasaCorporal: number | null;
-    masaMuscular: number | null;
-    medidasAdicionales: Record<string, unknown> | null;
-    nivelEnergia: number | null;
-    estadoAnimo: number | null;
-    notas: string | null;
-    realizadoPor: string | null;
-    proximaCita: string | null;
-    
-    // Metadata calculada
-    hasCompleteMetrics: boolean;
-    hasSubjectiveEvaluation: boolean;
-    tieneMetricasFisicas: boolean;
-    tieneEvaluacionSubjetiva: boolean;
-    isRecentControl: boolean;
-    diasDesdeControl: number;
-    needsFollowUp: boolean;
-    
-    // Validaciones
-    isValidNivelEnergia: boolean;
-    isValidEstadoAnimo: boolean;
-    
-    // Timestamps
-    fechaCreacion: string;
-    fechaActualizacion: string;
+  // =============================================
+  // NUEVOS TIPOS PARA ESTADÍSTICAS
+  // =============================================
+  
+  export interface MetricPoint {
+    fecha: string;
+    valor: number;
+    isCurrentControl?: boolean;
   }
+  
+  export interface TrendAnalysis {
+    trend: 'ASCENDING' | 'DESCENDING' | 'STABLE';
+    percentage: number;
+    description: string;
+    isPositive: boolean;
+  }
+  
+  export interface MetricStatistics {
+    current: number | null;
+    previous: number | null;
+    change: number | null;
+    changePercent: number | null;
+    min: number;
+    max: number;
+    average: number;
+    median: number;
+    standardDeviation: number;
+    dataPoints: MetricPoint[];
+    trend: TrendAnalysis;
+    hasImprovement: boolean;
+    improvementMessage: string;
+  }
+  
+  export interface ControlFisicoStatistics {
+    peso: MetricStatistics;
+    grasaCorporal: MetricStatistics;
+    masaMuscular: MetricStatistics;
+    nivelEnergia: MetricStatistics;
+    estadoAnimo: MetricStatistics;
+    imc: MetricStatistics;
+  }
+  
+  export interface PhysicalProgressSummary {
+    totalControls: number;
+    daysTracked: number;
+    firstControlDate: string | null;
+    lastControlDate: string | null;
+    consistencyRate: number;
+    mostActiveMonth: string | null;
+    averageTimeBetweenControls: number;
+  }
+  
+  export interface TrendsAnalysis {
+    weightLoss: TrendAnalysis;
+    muscleGain: TrendAnalysis;
+    fatLoss: TrendAnalysis;
+    energyImprovement: TrendAnalysis;
+    overallProgress: TrendAnalysis;
+  }
+  
+  export interface GoalProgress {
+    metricName: string;
+    targetValue: number | null;
+    currentValue: number | null;
+    initialValue: number | null;
+    progressPercent: number;
+    isOnTrack: boolean;
+    estimatedCompletionDate: string | null;
+    daysToGoal: number | null;
+  }
+  
+  export interface CorrelationAnalysis {
+    pesoVsGrasa: number;
+    pesoVsMusculo: number;
+    energiaVsAnimo: number;
+    grasaVsMusculo: number;
+    interpretations: {
+      strongCorrelations: string[];
+      insights: string[];
+    };
+  }
+  
+  export interface ChartData {
+    weightChart: MetricPoint[];
+    bodyCompositionChart: {
+      fecha: string;
+      grasaCorporal: number | null;
+      masaMuscular: number | null;
+      peso: number | null;
+    }[];
+    wellnessChart: {
+      fecha: string;
+      nivelEnergia: number | null;
+      estadoAnimo: number | null;
+    }[];
+    progressChart: {
+      fecha: string;
+      imc: number | null;
+      peso: number | null;
+      grasaCorporal: number | null;
+    }[];
+    monthlyAverages: {
+      mes: string;
+      pesoPromedio: number | null;
+      grasaPromedio: number | null;
+      musculoPromedio: number | null;
+      energiaPromedio: number | null;
+    }[];
+  }
+  
+  export interface InsightsData {
+    achievements: string[];
+    concerns: string[];
+    recommendations: string[];
+    nextSteps: string[];
+  }
+  
+  // =============================================
+  // ACTUALIZAR ClienteControlInfo PARA INCLUIR IMC
+  // =============================================
   
   export interface ClienteControlInfo {
     id: string;
@@ -148,6 +254,7 @@ export interface CreateControlFisicoRequest {
     altura: number | null;
     genero: string | null;
     hasCompleteProfile: boolean;
+    imc: number | null; // ← AGREGADO
   }
   
   // =============================================
