@@ -22,7 +22,7 @@ import {
 } from '../../types/seguimiento-fisico-api.types';
 
 interface ControlStatisticsPanelProps {
-  statistics: ControlFisicoStatistics;
+  statistics?: ControlFisicoStatistics;
   trends?: TrendsAnalysis;
   progressSummary?: PhysicalProgressSummary;
   insights?: InsightsData;
@@ -32,7 +32,7 @@ interface ControlStatisticsPanelProps {
 
 interface MetricCardProps {
   title: string;
-  metric: MetricStatistics;
+  metric?: MetricStatistics;
   unit: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
@@ -42,7 +42,7 @@ interface MetricCardProps {
 
 interface TrendCardProps {
   title: string;
-  trend: TrendAnalysis;
+  trend?: TrendAnalysis;
   icon: React.ComponentType<{ className?: string }>;
 }
 
@@ -62,23 +62,23 @@ const MetricCard: React.FC<MetricCardProps> = ({
     </CardHeader>
     <CardContent className="space-y-3">
       <div className="flex items-baseline space-x-2">
-        <span className="text-2xl font-bold">{metric.current || 'N/A'}</span>
+        <span className="text-2xl font-bold">{metric?.current || 'N/A'}</span>
         <span className="text-sm text-muted-foreground">{unit}</span>
       </div>
       
-      {showProgress && metric.current && (
+      {showProgress && metric?.current && (
         <Progress 
           value={(metric.current / maxValue) * 100} 
           className="h-2"
         />
       )}
       
-      {metric.change !== null && (
+      {metric?.change !== null && metric?.change !== undefined && (
         <div className="flex items-center justify-between">
           <div className={`flex items-center space-x-1 ${
-            metric.trend.isPositive ? 'text-green-600' : 'text-red-600'
+            metric.trend?.isPositive ? 'text-green-600' : 'text-red-600'
           }`}>
-            {metric.trend.isPositive ? (
+            {metric.trend?.isPositive ? (
               <TrendingUp className="w-3 h-3" />
             ) : (
               <TrendingDown className="w-3 h-3" />
@@ -94,7 +94,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
       )}
       
       <p className="text-xs text-muted-foreground leading-relaxed">
-        {metric.improvementMessage}
+        {metric?.improvementMessage || 'Sin datos suficientes para análisis'}
       </p>
     </CardContent>
   </Card>
@@ -107,20 +107,28 @@ const TrendCard: React.FC<TrendCardProps> = ({ title, trend, icon: Icon }) => (
       <Icon className="h-4 w-4 text-muted-foreground" />
     </CardHeader>
     <CardContent>
-      <div className="flex items-center space-x-2">
-        <Badge variant={trend.isPositive ? "default" : "secondary"} className="gap-1">
-          {trend.isPositive ? (
-            <TrendingUp className="w-3 h-3" />
-          ) : (
-            <TrendingDown className="w-3 h-3" />
-          )}
-          {trend.trend}
-        </Badge>
-        <span className="text-sm font-medium">{trend.percentage.toFixed(1)}%</span>
-      </div>
-      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-        {trend.description}
-      </p>
+      {trend ? (
+        <>
+          <div className="flex items-center space-x-2">
+            <Badge variant={trend.isPositive ? "default" : "secondary"} className="gap-1">
+              {trend.isPositive ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <TrendingDown className="w-3 h-3" />
+              )}
+              {trend.trend}
+            </Badge>
+            <span className="text-sm font-medium">{trend.percentage.toFixed(1)}%</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+            {trend.description}
+          </p>
+        </>
+      ) : (
+        <div className="text-center py-4">
+          <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
+        </div>
+      )}
     </CardContent>
   </Card>
 );
@@ -143,6 +151,18 @@ const ControlStatisticsPanel: React.FC<ControlStatisticsPanelProps> = ({
           ))}
         </div>
       </div>
+    );
+  }
+
+  // Si no hay estadísticas, mostrar mensaje
+  if (!statistics) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No hay estadísticas disponibles para este control. Las estadísticas se generan automáticamente basándose en el historial de controles.
+        </AlertDescription>
+      </Alert>
     );
   }
 

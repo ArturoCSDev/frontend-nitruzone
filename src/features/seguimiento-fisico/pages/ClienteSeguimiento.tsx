@@ -1,5 +1,5 @@
 // src/features/seguimiento-fisico/pages/ClienteSeguimiento.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -95,13 +95,21 @@ const ClienteSeguimiento: React.FC = () => {
   const { data: controlesData, isLoading: isLoadingControles, error } = useControlsByCliente(clienteId || '', filters);
   
   // Hook para obtener estadísticas del último control
-  const lastControlId = controlesData?.controles?.[0]?.id || '';
+  const controles = controlesData?.controles || [];
+  const lastControlId = controles[0]?.id || '';
+  
+  // Actualizar el control seleccionado cuando cambie el último control
+  useEffect(() => {
+    if (lastControlId && !selectedControlForStats) {
+      setSelectedControlForStats(lastControlId);
+    }
+  }, [lastControlId, selectedControlForStats]);
+
   const { data: statsData, isLoading: isLoadingStats } = useControlFisicoDashboard(
     selectedControlForStats || lastControlId, 
     statisticsDays
   );
 
-  const controles = controlesData?.controles || [];
   const summary = controlesData?.summary;
 
   // Handlers
@@ -388,6 +396,7 @@ const ClienteSeguimiento: React.FC = () => {
                 <Select 
                   value={selectedControlForStats || lastControlId} 
                   onValueChange={handleControlSelect}
+                  disabled={controles.length === 0}
                 >
                   <SelectTrigger className="w-64">
                     <SelectValue placeholder="Seleccionar control" />
@@ -423,13 +432,20 @@ const ClienteSeguimiento: React.FC = () => {
             </Badge>
           </div>
 
-          {statsData && (
+          {controles.length === 0 ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No hay controles físicos registrados para este cliente. Crea el primer control para comenzar a ver estadísticas.
+              </AlertDescription>
+            </Alert>
+          ) : (
             <ControlStatisticsPanel
-              statistics={statsData.statistics!}
-              trends={statsData.trends}
-              progressSummary={statsData.progressSummary}
-              insights={statsData.insights}
-              correlations={statsData.correlations}
+              statistics={statsData?.statistics}
+              trends={statsData?.trends}
+              progressSummary={statsData?.progressSummary}
+              insights={statsData?.insights}
+              correlations={statsData?.correlations}
               isLoading={isLoadingStats}
             />
           )}
@@ -444,6 +460,7 @@ const ClienteSeguimiento: React.FC = () => {
                 <Select 
                   value={selectedControlForStats || lastControlId} 
                   onValueChange={handleControlSelect}
+                  disabled={controles.length === 0}
                 >
                   <SelectTrigger className="w-64">
                     <SelectValue placeholder="Seleccionar control" />
@@ -479,20 +496,20 @@ const ClienteSeguimiento: React.FC = () => {
             </Badge>
           </div>
 
-          {statsData?.chartData ? (
-            <ControlFisicoCharts
-              chartData={statsData.chartData}
-              trends={statsData.trends}
-              statistics={statsData.statistics}
-              isLoading={isLoadingStats}
-            />
-          ) : (
+          {controles.length === 0 ? (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No hay datos suficientes para mostrar gráficas. Se necesitan al menos 2 controles para generar visualizaciones.
+                No hay controles físicos registrados para este cliente. Crea el primer control para comenzar a ver gráficas.
               </AlertDescription>
             </Alert>
+          ) : (
+            <ControlFisicoCharts
+              chartData={statsData?.chartData}
+              trends={statsData?.trends}
+              statistics={statsData?.statistics}
+              isLoading={isLoadingStats}
+            />
           )}
         </TabsContent>
       </Tabs>

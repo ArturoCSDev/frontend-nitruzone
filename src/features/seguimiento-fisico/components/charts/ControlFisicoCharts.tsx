@@ -1,6 +1,6 @@
 // src/features/seguimiento-fisico/components/charts/ControlFisicoCharts.tsx
 import React from 'react';
-import { Activity, TrendingUp, TrendingDown, Scale, Heart, Target, Calendar } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Scale, Heart, Target, Calendar, AlertCircle } from 'lucide-react';
 
 // Shadcn UI Components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Recharts
 import { 
@@ -36,7 +37,7 @@ import {
 } from '../../types/seguimiento-fisico-api.types';
 
 interface ControlFisicoChartsProps {
-  chartData: ChartData;
+  chartData?: ChartData;
   trends?: TrendsAnalysis;
   statistics?: ControlFisicoStatistics;
   isLoading?: boolean;
@@ -106,25 +107,40 @@ const ControlFisicoCharts: React.FC<ControlFisicoChartsProps> = ({
     );
   }
 
-  const processedWeightData = chartData.weightChart.map(item => ({
-    ...item,
-    fecha: formatDate(item.fecha)
-  }));
+  // Si no hay datos de gráficas, mostrar alerta
+  if (!chartData) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No hay datos suficientes para generar gráficas. Se necesitan al menos 2 controles con métricas para crear visualizaciones.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
-  const processedBodyCompositionData = chartData.bodyCompositionChart.map(item => ({
+  // Procesar datos de manera segura
+  const processedWeightData = chartData.weightChart?.map(item => ({
     ...item,
     fecha: formatDate(item.fecha)
-  }));
+  })) || [];
 
-  const processedWellnessData = chartData.wellnessChart.map(item => ({
+  const processedBodyCompositionData = chartData.bodyCompositionChart?.map(item => ({
     ...item,
     fecha: formatDate(item.fecha)
-  }));
+  })) || [];
 
-  const processedProgressData = chartData.progressChart.map(item => ({
+  const processedWellnessData = chartData.wellnessChart?.map(item => ({
     ...item,
     fecha: formatDate(item.fecha)
-  }));
+  })) || [];
+
+  const processedProgressData = chartData.progressChart?.map(item => ({
+    ...item,
+    fecha: formatDate(item.fecha)
+  })) || [];
+
+  const processedMonthlyData = chartData.monthlyAverages || [];
 
   return (
     <div className="space-y-6">
@@ -166,7 +182,7 @@ const ControlFisicoCharts: React.FC<ControlFisicoChartsProps> = ({
 
         <TabsContent value="progress" className="space-y-4">
           <ProgressChart data={processedProgressData} statistics={statistics} />
-          <MonthlyAveragesChart data={chartData.monthlyAverages} />
+          <MonthlyAveragesChart data={processedMonthlyData} />
         </TabsContent>
       </Tabs>
     </div>
@@ -182,65 +198,88 @@ interface WeightChartProps {
   statistics?: ControlFisicoStatistics['peso'];
 }
 
-const WeightChart: React.FC<WeightChartProps> = ({ data, statistics }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Scale className="w-5 h-5" />
-        Evolución del Peso
-      </CardTitle>
-      {statistics && (
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>Actual: {statistics.current}kg</span>
-          <span>Cambio: {statistics.change && statistics.change > 0 ? '+' : ''}{statistics.change}kg</span>
-          <Badge variant={statistics.hasImprovement ? "default" : "secondary"}>
-            {statistics.hasImprovement ? 'Mejorando' : 'Estable'}
-          </Badge>
-          <div className="flex items-center gap-1">
-            {statistics.trend.isPositive ? (
-              <TrendingUp className="w-3 h-3 text-green-600" />
-            ) : (
-              <TrendingDown className="w-3 h-3 text-red-600" />
-            )}
-            <span className="text-xs">{statistics.trend.percentage.toFixed(1)}%</span>
+const WeightChart: React.FC<WeightChartProps> = ({ data, statistics }) => {
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Scale className="w-5 h-5" />
+            Evolución del Peso
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No hay datos de peso disponibles para mostrar la gráfica.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Scale className="w-5 h-5" />
+          Evolución del Peso
+        </CardTitle>
+        {statistics && (
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>Actual: {statistics.current}kg</span>
+            <span>Cambio: {statistics.change && statistics.change > 0 ? '+' : ''}{statistics.change}kg</span>
+            <Badge variant={statistics.hasImprovement ? "default" : "secondary"}>
+              {statistics.hasImprovement ? 'Mejorando' : 'Estable'}
+            </Badge>
+            <div className="flex items-center gap-1">
+              {statistics.trend.isPositive ? (
+                <TrendingUp className="w-3 h-3 text-green-600" />
+              ) : (
+                <TrendingDown className="w-3 h-3 text-red-600" />
+              )}
+              <span className="text-xs">{statistics.trend.percentage.toFixed(1)}%</span>
+            </div>
           </div>
-        </div>
-      )}
-    </CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={300}>
-        <AreaChart data={data}>
-          <defs>
-            <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis 
-            dataKey="fecha" 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <YAxis 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Area
-            type="monotone"
-            dataKey="valor"
-            stroke="#3b82f6"
-            strokeWidth={3}
-            fill="url(#weightGradient)"
-            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, fill: '#1d4ed8' }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-);
+        )}
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={data}>
+            <defs>
+              <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis 
+              dataKey="fecha" 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <YAxis 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="valor"
+              stroke="#3b82f6"
+              strokeWidth={3}
+              fill="url(#weightGradient)"
+              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, fill: '#1d4ed8' }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+};
 
 // =============================================
 // COMPONENTE DE COMPOSICIÓN CORPORAL
@@ -251,82 +290,105 @@ interface BodyCompositionChartProps {
   statistics?: ControlFisicoStatistics;
 }
 
-const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({ data, statistics }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Activity className="w-5 h-5" />
-        Composición Corporal
-      </CardTitle>
-      {statistics && (
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>Grasa: {statistics.grasaCorporal?.current}%</span>
-          <span>Músculo: {statistics.masaMuscular?.current}%</span>
-          <div className="flex items-center gap-2">
-            <Badge variant={statistics.grasaCorporal?.hasImprovement ? "default" : "secondary"}>
-              Grasa {statistics.grasaCorporal?.hasImprovement ? 'Mejorando' : 'Estable'}
-            </Badge>
-            <Badge variant={statistics.masaMuscular?.hasImprovement ? "default" : "secondary"}>
-              Músculo {statistics.masaMuscular?.hasImprovement ? 'Mejorando' : 'Estable'}
-            </Badge>
+const BodyCompositionChart: React.FC<BodyCompositionChartProps> = ({ data, statistics }) => {
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Composición Corporal
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No hay datos de composición corporal disponibles para mostrar la gráfica.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="w-5 h-5" />
+          Composición Corporal
+        </CardTitle>
+        {statistics && (
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>Grasa: {statistics.grasaCorporal?.current}%</span>
+            <span>Músculo: {statistics.masaMuscular?.current}%</span>
+            <div className="flex items-center gap-2">
+              <Badge variant={statistics.grasaCorporal?.hasImprovement ? "default" : "secondary"}>
+                Grasa {statistics.grasaCorporal?.hasImprovement ? 'Mejorando' : 'Estable'}
+              </Badge>
+              <Badge variant={statistics.masaMuscular?.hasImprovement ? "default" : "secondary"}>
+                Músculo {statistics.masaMuscular?.hasImprovement ? 'Mejorando' : 'Estable'}
+              </Badge>
+            </div>
           </div>
-        </div>
-      )}
-    </CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={350}>
-        <ComposedChart data={data}>
-          <defs>
-            <linearGradient id="muscleGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
-            </linearGradient>
-            <linearGradient id="fatGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis 
-            dataKey="fecha" 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <YAxis 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="peso"
-            stroke="#3b82f6"
-            strokeWidth={2}
-            name="Peso (kg)"
-            dot={{ r: 3 }}
-          />
-          <Area
-            type="monotone"
-            dataKey="grasaCorporal"
-            stroke="#ef4444"
-            strokeWidth={2}
-            fill="url(#fatGradient)"
-            name="Grasa Corporal (%)"
-          />
-          <Area
-            type="monotone"
-            dataKey="masaMuscular"
-            stroke="#10b981"
-            strokeWidth={2}
-            fill="url(#muscleGradient)"
-            name="Masa Muscular (%)"
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-);
+        )}
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={350}>
+          <ComposedChart data={data}>
+            <defs>
+              <linearGradient id="muscleGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="fatGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis 
+              dataKey="fecha" 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <YAxis 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="peso"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              name="Peso (kg)"
+              dot={{ r: 3 }}
+            />
+            <Area
+              type="monotone"
+              dataKey="grasaCorporal"
+              stroke="#ef4444"
+              strokeWidth={2}
+              fill="url(#fatGradient)"
+              name="Grasa Corporal (%)"
+            />
+            <Area
+              type="monotone"
+              dataKey="masaMuscular"
+              stroke="#10b981"
+              strokeWidth={2}
+              fill="url(#muscleGradient)"
+              name="Masa Muscular (%)"
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+};
 
 // =============================================
 // COMPONENTE DE BIENESTAR
@@ -337,114 +399,137 @@ interface WellnessChartProps {
   statistics?: ControlFisicoStatistics;
 }
 
-const WellnessChart: React.FC<WellnessChartProps> = ({ data, statistics }) => (
-  <div className="space-y-4">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Heart className="w-5 h-5" />
-          Bienestar General
-        </CardTitle>
-        {statistics && (
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Energía: {statistics.nivelEnergia?.current}/5</span>
-            <span>Ánimo: {statistics.estadoAnimo?.current}/5</span>
-          </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis 
-              dataKey="fecha" 
-              className="text-muted-foreground"
-              fontSize={12}
-            />
-            <YAxis 
-              domain={[0, 5]} 
-              className="text-muted-foreground"
-              fontSize={12}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="nivelEnergia"
-              stroke="#eab308"
-              strokeWidth={3}
-              name="Nivel de Energía"
-              dot={{ fill: '#eab308', r: 4 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="estadoAnimo"
-              stroke="#ec4899"
-              strokeWidth={3}
-              name="Estado de Ánimo"
-              dot={{ fill: '#ec4899', r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-
-    {/* Wellness Progress Cards */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+const WellnessChart: React.FC<WellnessChartProps> = ({ data, statistics }) => {
+  if (!data || data.length === 0) {
+    return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Nivel de Energía</CardTitle>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5" />
+            Bienestar General
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">
-                {statistics?.nivelEnergia?.current || 0}/5
-              </span>
-              <Badge variant={
-                (statistics?.nivelEnergia?.current || 0) >= 4 ? "default" : 
-                (statistics?.nivelEnergia?.current || 0) >= 3 ? "secondary" : "destructive"
-              }>
-                {(statistics?.nivelEnergia?.current || 0) >= 4 ? 'Alto' : 
-                 (statistics?.nivelEnergia?.current || 0) >= 3 ? 'Moderado' : 'Bajo'}
-              </Badge>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No hay datos de bienestar disponibles para mostrar la gráfica.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5" />
+            Bienestar General
+          </CardTitle>
+          {statistics && (
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>Energía: {statistics.nivelEnergia?.current}/5</span>
+              <span>Ánimo: {statistics.estadoAnimo?.current}/5</span>
             </div>
-            <Progress value={(statistics?.nivelEnergia?.current || 0) * 20} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-              {statistics?.nivelEnergia?.improvementMessage || 'Sin datos suficientes'}
-            </p>
-          </div>
+          )}
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis 
+                dataKey="fecha" 
+                className="text-muted-foreground"
+                fontSize={12}
+              />
+              <YAxis 
+                domain={[0, 5]} 
+                className="text-muted-foreground"
+                fontSize={12}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="nivelEnergia"
+                stroke="#eab308"
+                strokeWidth={3}
+                name="Nivel de Energía"
+                dot={{ fill: '#eab308', r: 4 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="estadoAnimo"
+                stroke="#ec4899"
+                strokeWidth={3}
+                name="Estado de Ánimo"
+                dot={{ fill: '#ec4899', r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Estado de Ánimo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">
-                {statistics?.estadoAnimo?.current || 0}/5
-              </span>
-              <Badge variant={
-                (statistics?.estadoAnimo?.current || 0) >= 4 ? "default" : 
-                (statistics?.estadoAnimo?.current || 0) >= 3 ? "secondary" : "destructive"
-              }>
-                {(statistics?.estadoAnimo?.current || 0) >= 4 ? 'Excelente' : 
-                 (statistics?.estadoAnimo?.current || 0) >= 3 ? 'Bueno' : 'Regular'}
-              </Badge>
+      {/* Wellness Progress Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Nivel de Energía</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-bold">
+                  {statistics?.nivelEnergia?.current || 0}/5
+                </span>
+                <Badge variant={
+                  (statistics?.nivelEnergia?.current || 0) >= 4 ? "default" : 
+                  (statistics?.nivelEnergia?.current || 0) >= 3 ? "secondary" : "destructive"
+                }>
+                  {(statistics?.nivelEnergia?.current || 0) >= 4 ? 'Alto' : 
+                   (statistics?.nivelEnergia?.current || 0) >= 3 ? 'Moderado' : 'Bajo'}
+                </Badge>
+              </div>
+              <Progress value={(statistics?.nivelEnergia?.current || 0) * 20} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {statistics?.nivelEnergia?.improvementMessage || 'Sin datos suficientes'}
+              </p>
             </div>
-            <Progress value={(statistics?.estadoAnimo?.current || 0) * 20} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-              {statistics?.estadoAnimo?.improvementMessage || 'Sin datos suficientes'}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Estado de Ánimo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-bold">
+                  {statistics?.estadoAnimo?.current || 0}/5
+                </span>
+                <Badge variant={
+                  (statistics?.estadoAnimo?.current || 0) >= 4 ? "default" : 
+                  (statistics?.estadoAnimo?.current || 0) >= 3 ? "secondary" : "destructive"
+                }>
+                  {(statistics?.estadoAnimo?.current || 0) >= 4 ? 'Excelente' : 
+                   (statistics?.estadoAnimo?.current || 0) >= 3 ? 'Bueno' : 'Regular'}
+                </Badge>
+              </div>
+              <Progress value={(statistics?.estadoAnimo?.current || 0) * 20} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {statistics?.estadoAnimo?.improvementMessage || 'Sin datos suficientes'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // =============================================
 // COMPONENTE DE PROGRESO GENERAL
@@ -455,58 +540,81 @@ interface ProgressChartProps {
   statistics?: ControlFisicoStatistics;
 }
 
-const ProgressChart: React.FC<ProgressChartProps> = ({ data, statistics }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Target className="w-5 h-5" />
-        Progreso General
-      </CardTitle>
-      {statistics && (
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>IMC: {statistics.imc?.current?.toFixed(1) || 'N/A'}</span>
-          <Badge variant={statistics.imc?.hasImprovement ? "default" : "secondary"}>
-            {statistics.imc?.hasImprovement ? 'Mejorando' : 'Estable'}
-          </Badge>
-        </div>
-      )}
-    </CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={300}>
-        <ComposedChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis 
-            dataKey="fecha" 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <YAxis 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="imc"
-            stroke="#8b5cf6"
-            strokeWidth={3}
-            name="IMC"
-            dot={{ fill: '#8b5cf6', r: 4 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="grasaCorporal"
-            stroke="#ef4444"
-            strokeWidth={2}
-            name="Grasa Corporal (%)"
-            dot={{ r: 3 }}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-);
+const ProgressChart: React.FC<ProgressChartProps> = ({ data, statistics }) => {
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="w-5 h-5" />
+            Progreso General
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No hay datos de progreso disponibles para mostrar la gráfica.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="w-5 h-5" />
+          Progreso General
+        </CardTitle>
+        {statistics && (
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>IMC: {statistics.imc?.current?.toFixed(1) || 'N/A'}</span>
+            <Badge variant={statistics.imc?.hasImprovement ? "default" : "secondary"}>
+              {statistics.imc?.hasImprovement ? 'Mejorando' : 'Estable'}
+            </Badge>
+          </div>
+        )}
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <ComposedChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis 
+              dataKey="fecha" 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <YAxis 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="imc"
+              stroke="#8b5cf6"
+              strokeWidth={3}
+              name="IMC"
+              dot={{ fill: '#8b5cf6', r: 4 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="grasaCorporal"
+              stroke="#ef4444"
+              strokeWidth={2}
+              name="Grasa Corporal (%)"
+              dot={{ r: 3 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+};
 
 // =============================================
 // COMPONENTE DE PROMEDIOS MENSUALES
@@ -516,51 +624,74 @@ interface MonthlyAveragesChartProps {
   data: ChartData['monthlyAverages'];
 }
 
-const MonthlyAveragesChart: React.FC<MonthlyAveragesChartProps> = ({ data }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Calendar className="w-5 h-5" />
-        Promedios Mensuales
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis 
-            dataKey="mes" 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <YAxis 
-            className="text-muted-foreground"
-            fontSize={12}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar 
-            dataKey="pesoPromedio" 
-            fill="#3b82f6" 
-            name="Peso Promedio"
-            radius={[2, 2, 0, 0]}
-          />
-          <Bar 
-            dataKey="grasaPromedio" 
-            fill="#ef4444" 
-            name="Grasa Promedio"
-            radius={[2, 2, 0, 0]}
-          />
-          <Bar 
-            dataKey="energiaPromedio" 
-            fill="#eab308" 
-            name="Energía Promedio"
-            radius={[2, 2, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-);
+const MonthlyAveragesChart: React.FC<MonthlyAveragesChartProps> = ({ data }) => {
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Promedios Mensuales
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No hay datos mensuales disponibles para mostrar la gráfica.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Calendar className="w-5 h-5" />
+          Promedios Mensuales
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis 
+              dataKey="mes" 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <YAxis 
+              className="text-muted-foreground"
+              fontSize={12}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Bar 
+              dataKey="pesoPromedio" 
+              fill="#3b82f6" 
+              name="Peso Promedio"
+              radius={[2, 2, 0, 0]}
+            />
+            <Bar 
+              dataKey="grasaPromedio" 
+              fill="#ef4444" 
+              name="Grasa Promedio"
+              radius={[2, 2, 0, 0]}
+            />
+            <Bar 
+              dataKey="energiaPromedio" 
+              fill="#eab308" 
+              name="Energía Promedio"
+              radius={[2, 2, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default ControlFisicoCharts;
